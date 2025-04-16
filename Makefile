@@ -4,7 +4,7 @@ STACK_NAME=$(PROJECT_NAME)-stack
 STACK_FILE=stack.yml
 TAG=latest
 
-.PHONY: up down restart logs
+.PHONY: up down restart logs frontend
 
 up:
 	@echo "Building the project..."
@@ -20,7 +20,11 @@ restart: down up
 logs:
 	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) logs -f
 
-.PHONY: deploy build push
+frontend:
+	@echo "Building the frontend..."
+	@cd frontend && npm install && npm run dev
+
+.PHONY: deploy build
 
 build:
 	@echo "Building the project..."
