@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  app:
+    image: js2-gateway:latest
+    env_file:
+      - .env
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "4000:8000"
