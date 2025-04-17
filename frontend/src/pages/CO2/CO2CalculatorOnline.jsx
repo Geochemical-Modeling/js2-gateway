@@ -48,11 +48,16 @@ export default function CO2CalculatorOnline() {
       const url = `/api/co2?temp=${formData.temp}&bar=${formData.bar}&mNaCl=${formData.mNaCl}`
       const response = await fetch(url)
       const JSON = await response.json()
+
       if (response.ok) {
-        // Data should be in here.
-        setData(JSON.data)
+        // Assuming the data we get is a string that we need to clean
+        setData(handleCleanData(JSON.data))
         setError(null)
+      } else {
+        // If the response is not ok, throw an error
+        throw new Error(JSON.error || "An error occurred while fetching data");
       }
+
     } catch (err) {
       console.error(err.message)
       setError(err.message)
@@ -65,7 +70,7 @@ export default function CO2CalculatorOnline() {
    * @param name Name of the input field
    * @param value Value of the associated input field
    */
-  const handleChange = (name: string, value: string) => {
+  const handleChange = (name, value) => {
     setFormData((prevState) => ({
       ...prevState,
       [name]: value,

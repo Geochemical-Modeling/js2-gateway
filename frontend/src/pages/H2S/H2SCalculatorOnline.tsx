@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import SelectInput, {DropDownOption} from "../../components/SelectInput";
+import SelectInput from "../../components/SelectInput";
 
 import Chart from "chart.js/auto";
 
@@ -19,7 +19,7 @@ const colors = [
 ];
 const p = Array.from({ length: 61 }, (_, i) => i * 10);
 
-const systemOptions: DropDownOption[] = [
+const systemOptions = [
   {
     label: "CO₂-H₂O-NaCl",
     value: "0",
@@ -34,7 +34,7 @@ const systemOptions: DropDownOption[] = [
   }
 ]
 
-const XCoordinateOptions: DropDownOption[] = [
+const XCoordinateOptions = [
   {
     label: "P, Bar",
     value: "0"
@@ -53,7 +53,7 @@ const XCoordinateOptions: DropDownOption[] = [
   }
 ]
 
-const YCoordinateOptions: DropDownOption[] = [
+const YCoordinateOptions = [
   {
     label: "P, Bar",
     value: "0",
@@ -260,10 +260,9 @@ export default function H2SCalculatorOnline() {
       const JSON = await response.json();
       const data = JSON.data;
       const newComputedData: number[][] = data;
-
-      // for (let i = 0; i < data.length; i++) {
-      //   newComputedData.push(data[i].map((elem: string) => parseFloat(elem)));
-      // }
+      for (let i = 0; i < data.length; i++) {
+        newComputedData.push(data[i].map((elem: string) => parseFloat(elem)));
+      }
 
       // Update graphHistory
       setGraphHistory((prevHistory) => [
@@ -278,8 +277,7 @@ export default function H2SCalculatorOnline() {
       ]);
 
       // Prepare download data
-      prepareDownloadData(system, temp, mNaCl, data);
-      // prepareDownloadData(system, temp, mNaCl, newComputedData);
+      prepareDownloadData(system, temp, mNaCl, newComputedData);
 
       setEnableRun(true);
     } catch (error) {
