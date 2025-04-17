@@ -1,6 +1,51 @@
 # Development Reference
 Geochemical Gateway portal page rewrite for modern systems.
 
+
+### Issues
+
+#### Things I tried to fix
+- I made changes to Dockerfile so that uvicorn runs on port 8000, so now we at least know it's running on 8000. But it was already doing that by default?
+
+
+
+```bash
+
+
+# Shows stdout and stderr fro mthe container, including error messages from Python, uv, or uvicorn.
+docker log <container-id>
+
+# Loops through all exited containers
+docker ps -a --filter "status=exited" --format '{{.ID}} {{.Names}}' | while read id name; do
+  echo "=== Logs for $name ==="
+  docker logs "$id"
+  echo ""
+done
+
+
+docker service ls
+
+# Since we're using docker swarm, let's get the logs from a service
+docker service logs js2-gateway-stack_app
+
+# Or a specific task/container in that service
+docker logs $(docker ps -q --filter "name=js2-gateway-stack_app.1.slnd0smqalrmk237e6xf8kgmj")
+```
+
+
+#### Things to keep track of
+- I think we should uniformalize the error messages that we send. I'm wondering if FastAPI does that, or I'd have to send back a response, and create the JSON for that response. I'd have to create some utils then.
+
+
+- H2S probably won't be able to be re-written because it relies on Scipy's grid interpolation data, more specifically for ungridded (unstructured) data. JS doesn't have anything for that, and you'd have to build it yourself.
+- CO2 Calculator is close to done, we just need the frontend and backend to integrate together then format the text.
+- RateCalculator or rate constants. It's something rate related, but the idea is most of the data processing can be client side.
+- `make logs` doesn't seem useful, it didn't output anything.
+
+
+
+
+
 ## Running locally
 ### Running the frontend only
 This is incredibly useful if you're just working on a portion of the site and don't need the backend running. Doesn't run inside of a container at all.
