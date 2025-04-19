@@ -1,6 +1,6 @@
 import React from 'react';
 import worldmap from '../../assets/worldmap.jpg';
-
+import { route_map } from '../constants';
 const Home = () => {
   return (
     <>
@@ -131,7 +131,7 @@ const Home = () => {
               and from 0 to 2000 bar using the model by Duan, Sun, Zhu, Chou
               (2006).
             </p>
-            <a target="_blank" href="#0" className="rvt-cta" rel="noreferrer">
+            <a target="_blank" href={route_map.COTWO_CALCULATOR} className="rvt-cta" rel="noreferrer">
               Use CO<sub>2</sub> Calculator
             </a>
             <hr />
