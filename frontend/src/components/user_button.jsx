@@ -44,7 +44,7 @@ function UserButton() {
               </span>
             )}
             {isAdmin && (
-              <span className="rvt-badge rvt-badge--info rvt-m-left-xs">
+              <span className="rvt-badge rvt-badge--success rvt-m-left-xs">
                 Admin
               </span>
             )}

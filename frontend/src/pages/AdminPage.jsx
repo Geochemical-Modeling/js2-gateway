@@ -13,10 +13,16 @@ function AdminPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     showPending: true,
-    showApproved: true,
-    showArchived: false,
+    showApproved: false,
+    showArchived: true,
   });
   const [actionResult, setActionResult] = useState({ type: null, message: '' });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [displayedUsers, setDisplayedUsers] = useState([]);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -81,7 +87,20 @@ function AdminPage() {
     }
 
     setFilteredUsers(filtered);
+
+    // Reset to first page when filters change
+    setCurrentPage(1);
+
+    // Calculate total pages
+    setTotalPages(Math.max(1, Math.ceil(filtered.length / itemsPerPage)));
   };
+
+  // Update displayed users when page or filtered users change
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    setDisplayedUsers(filteredUsers.slice(startIndex, endIndex));
+  }, [filteredUsers, currentPage, itemsPerPage]);
 
   // Update filters when search term changes
   useEffect(() => {
@@ -94,6 +113,22 @@ function AdminPage() {
       ...filters,
       [filterName]: !filters[filterName],
     });
+  };
+
+  // Pagination handlers
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    const newItemsPerPage = parseInt(e.target.value, 10);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page
+    setTotalPages(
+      Math.max(1, Math.ceil(filteredUsers.length / newItemsPerPage)),
+    );
   };
 
   // Handle user status updates
@@ -249,6 +284,91 @@ function AdminPage() {
     );
   };
 
+  // Pagination controls component
+  const PaginationControls = () => (
+    <div className="rvt-pagination rvt-pagination--right rvt-m-top-md">
+      <div className="rvt-pagination__controls">
+        <button
+          className="rvt-pagination__control"
+          aria-label="First page"
+          onClick={() => goToPage(1)}
+          disabled={currentPage === 1}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M11 3.75L6.25 8.5L11 13.25V3.75Z" fill="currentColor" />
+            <path d="M5 3.75V13.25" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        </button>
+        <button
+          className="rvt-pagination__control rvt-m-left-xs"
+          aria-label="Previous page"
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M10 3.75L5.25 8.5L10 13.25"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+          </svg>
+        </button>
+        <span className="rvt-pagination__label rvt-m-left-sm rvt-m-right-sm">
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          className="rvt-pagination__control"
+          aria-label="Next page"
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M6 3.75L10.75 8.5L6 13.25"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+          </svg>
+        </button>
+        <button
+          className="rvt-pagination__control rvt-m-left-xs"
+          aria-label="Last page"
+          onClick={() => goToPage(totalPages)}
+          disabled={currentPage === totalPages}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M5 3.75L9.75 8.5L5 13.25V3.75Z" fill="currentColor" />
+            <path d="M11 3.75V13.25" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+
   if (!isAuthenticated || userAuth?.admin_rights !== 1) {
     return (
       <main
@@ -366,6 +486,29 @@ function AdminPage() {
                 </div>
               </div>
             </div>
+
+            {/* Items per page selector */}
+            <div className="rvt-row rvt-m-top-md">
+              <div className="rvt-cols-auto">
+                <label
+                  htmlFor="itemsPerPage"
+                  className="rvt-label rvt-m-right-xs"
+                >
+                  Items per page:
+                </label>
+                <select
+                  id="itemsPerPage"
+                  className="rvt-select"
+                  value={itemsPerPage}
+                  onChange={handleItemsPerPageChange}
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -398,14 +541,16 @@ function AdminPage() {
             <h2 className="rvt-ts-20 rvt-m-bottom-md">
               {filteredUsers.length} Users
               {searchTerm && ` matching "${searchTerm}"`}
+              {filteredUsers.length > itemsPerPage &&
+                ` (Showing ${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filteredUsers.length)} of ${filteredUsers.length})`}
             </h2>
 
             {/* Pending Users Section */}
             {filters.showPending &&
-              filteredUsers.some((user) => user.approved_user === 0) && (
+              displayedUsers.some((user) => user.approved_user === 0) && (
                 <div className="rvt-m-bottom-lg">
                   <h3 className="rvt-ts-18">Pending Users</h3>
-                  {filteredUsers
+                  {displayedUsers
                     .filter((user) => user.approved_user === 0)
                     .map((user) => (
                       <UserCard key={user.id} user={user} />
@@ -415,16 +560,19 @@ function AdminPage() {
 
             {/* Approved Users Section */}
             {filters.showApproved &&
-              filteredUsers.some((user) => user.approved_user === 1) && (
+              displayedUsers.some((user) => user.approved_user === 1) && (
                 <div className="rvt-m-bottom-lg">
                   <h3 className="rvt-ts-18">Approved Users</h3>
-                  {filteredUsers
+                  {displayedUsers
                     .filter((user) => user.approved_user === 1)
                     .map((user) => (
                       <UserCard key={user.id} user={user} />
                     ))}
                 </div>
               )}
+
+            {/* Pagination controls */}
+            {filteredUsers.length > itemsPerPage && <PaginationControls />}
           </div>
         )}
       </div>
