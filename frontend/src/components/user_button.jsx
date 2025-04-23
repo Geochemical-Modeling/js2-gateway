@@ -28,12 +28,12 @@ function UserButton() {
           href="#"
           data-rvt-dropdown-toggle="primary-nav-1"
         >
-          <div className="rvt-ts-14 rvt-p-right-xs rvt-m-right-xs rvt-border-right">
-            username
+          <div className="rvt-ts-14">
+            {user.given_name || user.email || 'User'}
           </div>
-          <div className="rvt-avatar rvt-avatar--xs">
+          {/* <div className="rvt-avatar rvt-avatar--xs">
             <span className="rvt-avatar__text">UN</span>
-          </div>
+          </div> */}
           <span className="rvt-sr-only">More sub-navigation links</span>
         </button>
       </div>

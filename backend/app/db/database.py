@@ -91,9 +91,7 @@ else:
                 with engine.connect() as conn:
                     # Using text() to create a SQL expression
                     result = conn.execute(text("SELECT 1"))
-                    logger.info(
-                        f"SQLAlchemy database connection test successful: {result.fetchone()}"
-                    )
+                    logger.info(f"SQLAlchemy database connection test successful: {result.fetchone()}")
             except Exception as e:
                 logger.error(f"SQLAlchemy database connection test failed: {e}")
                 # Keep the engine but mark the error
