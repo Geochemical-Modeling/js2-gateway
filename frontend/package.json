@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "rsbuild build && node scripts/purgecss-report.js",
+    "build": "biome format --write && rsbuild build && node scripts/purgecss-report.js",
     "check": "biome check --write",
     "dev": "rsbuild dev --open",
     "format": "biome format --write",

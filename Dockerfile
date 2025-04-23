@@ -6,10 +6,11 @@ RUN apk add libgcc libgfortran gcompat
 WORKDIR /app
 
 ADD backend/pyproject.toml .
-COPY --chmod=755 backend/app/ ./app
+RUN uv sync
+
+COPY backend/app/ ./app
 COPY frontend/dist ./dist
 
-# RUN chmod +x /app/app/routes/co2/main
-RUN uv sync
+RUN chmod +x /app/app/routes/co2/main
 
 CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0"]

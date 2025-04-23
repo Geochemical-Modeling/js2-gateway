@@ -131,7 +131,12 @@ const Home = () => {
               and from 0 to 2000 bar using the model by Duan, Sun, Zhu, Chou
               (2006).
             </p>
-            <a target="_blank" href={route_map.COTWO_CALCULATOR} className="rvt-cta" rel="noreferrer">
+            <a
+              target="_blank"
+              href={route_map.COTWO_CALCULATOR}
+              className="rvt-cta"
+              rel="noreferrer"
+            >
               Use CO<sub>2</sub> Calculator
             </a>
             <hr />
@@ -144,7 +149,7 @@ const Home = () => {
               Use Rates Calculator
             </a>
             <hr />
-            <p>PHREEQC BASIC Rate Scripts</p>
+            <h2>PHREEQC BASIC Rate Scripts</h2>
             <p>
               A library of RATES blocks for about 100 minerals in BASIC scripts.
               The scripts can also be used as templates for writing other rate

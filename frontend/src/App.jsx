@@ -16,10 +16,14 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="*" element={<NotFound />} />
 
-          <Route path={route_map.COTWO_CALCULATOR} element={<CO2Calculator />}/>
-          <Route path={route_map.COTWO_CALCULATOR_ONLINE} element={<CO2CalculatorOnline />}/>
-
-
+          <Route
+            path={route_map.COTWO_CALCULATOR}
+            element={<CO2Calculator />}
+          />
+          <Route
+            path={route_map.COTWO_CALCULATOR_ONLINE}
+            element={<CO2CalculatorOnline />}
+          />
         </Route>
       </Routes>
     </Router>

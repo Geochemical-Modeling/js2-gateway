@@ -44,9 +44,9 @@ function UserButton() {
       >
         <ul className="rvt-header-menu__submenu-list">
           <li className="rvt-header-menu__submenu-item">
-            <Link className="rvt-header-menu__submenu-link" to="#">
+            <a className="rvt-header-menu__submenu-link" href="/auth/logout">
               Logout
-            </Link>
+            </a>
           </li>
         </ul>
       </div>

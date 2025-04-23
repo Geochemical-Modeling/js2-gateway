@@ -1,4 +1,4 @@
-from app.routes import auth_me, auth
+from app.routes import auth
 from app.routes.co2 import co2_calc
 
 from fastapi import FastAPI, HTTPException, Request
@@ -19,18 +19,15 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 # The motivation is to catch all HTTPExceptions and return a consistent JSON response.
-# NOTE: If changed, please reflect those changes on frontend as well. It's simple just go to the fetch 
+# NOTE: If changed, please reflect those changes on frontend as well. It's simple just go to the fetch
 # functions for each calc.
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
-    err_content = {
-        "status_code": exc.status_code,
-        "message": exc.detail
-    }
+    err_content = {"status_code": exc.status_code, "message": exc.detail}
     return JSONResponse(
         status_code=exc.status_code,
         content=err_content,
@@ -38,7 +35,6 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
 
 app.include_router(co2_calc.router, prefix="/api/co2", tags=["CO2"])
-app.include_router(auth_me.router, tags=["auth"])
 app.include_router(auth.router, tags=["auth"])
 
 # Serve all static files (JS, CSS, images, etc.)
@@ -51,5 +47,3 @@ async def serve_spa(full_path: str):
     if os.path.exists(index_path):
         return FileResponse(index_path)
     return {"error": "index.html not found"}
-
-
