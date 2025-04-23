@@ -13,6 +13,8 @@ export const AuthProvider = ({ children }) => {
   const [userAuth, setUserAuth] = useState(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
@@ -25,6 +27,8 @@ export const AuthProvider = ({ children }) => {
         setUserAuth(DEV_USER_AUTH);
         setIsNewUser(false);
         setNeedsOnboarding(false);
+        setIsApproved(true);
+        setIsPending(false);
         setAuthChecked(true);
         return;
       }
@@ -37,13 +41,21 @@ export const AuthProvider = ({ children }) => {
           setUser(data.user_info);
           setUserAuth(data.user_auth);
           setIsNewUser(data.is_new_user || false);
-          // Set needs onboarding flag if user has not completed onboarding
+
+          // Set user status flags
           setNeedsOnboarding(data.user_auth?.onboarded === 0);
+          setIsApproved(data.user_auth?.approved_user === 1);
+          setIsPending(
+            data.user_auth?.onboarded === 1 &&
+              data.user_auth?.approved_user === 0,
+          );
         } else {
           setUser(null);
           setUserAuth(null);
           setIsNewUser(false);
           setNeedsOnboarding(false);
+          setIsApproved(false);
+          setIsPending(false);
         }
       } catch (err) {
         console.error('Error checking auth:', err);
@@ -51,6 +63,8 @@ export const AuthProvider = ({ children }) => {
         setUserAuth(null);
         setIsNewUser(false);
         setNeedsOnboarding(false);
+        setIsApproved(false);
+        setIsPending(false);
       } finally {
         setAuthChecked(true);
       }
@@ -70,6 +84,7 @@ export const AuthProvider = ({ children }) => {
         onboarded: 1,
       });
       setNeedsOnboarding(false);
+      setIsPending(true);
       return { success: true };
     }
 
@@ -93,6 +108,8 @@ export const AuthProvider = ({ children }) => {
           onboarded: 1,
         });
         setNeedsOnboarding(false);
+        setIsPending(data.user.approved_user === 0);
+        setIsApproved(data.user.approved_user === 1);
         return { success: true };
       }
       return { success: false, error: data.message };
@@ -111,6 +128,9 @@ export const AuthProvider = ({ children }) => {
         authChecked,
         isNewUser,
         needsOnboarding,
+        isApproved,
+        isPending,
+        isAdmin: userAuth?.admin_rights === 1,
         completeOnboarding,
         isAuthDisabled: IS_AUTH_DISABLED,
       }}

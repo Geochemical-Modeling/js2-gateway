@@ -7,6 +7,7 @@ import { route_map } from './constants.js';
 import CO2Calculator from './pages/CO2Calculator/CO2Calculator.jsx';
 import CO2CalculatorOnline from './pages/CO2Calculator/CO2CalculatorOnline.jsx';
 import Onboarding from './pages/Onboarding';
+import AdminPage from './pages/AdminPage';
 import { AuthProvider } from './AuthContext';
 import OnboardingCheck from './components/onboarding_check';
 
@@ -20,6 +21,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path={route_map.ADMIN_PAGE} element={<AdminPage />} />
             <Route path="*" element={<NotFound />} />
 
             {/* Tool routes */}
