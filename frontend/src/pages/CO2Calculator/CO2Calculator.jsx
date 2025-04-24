@@ -1,5 +1,4 @@
 import React from "react"
-import Disclaimer from "../../components/Disclaimer"
 import { route_map } from "../../constants"
 
 export default function CO2Calculator() {
@@ -51,7 +50,6 @@ export default function CO2Calculator() {
 
       <br />
 
-      <Disclaimer />
       </div>
     </main>
   )

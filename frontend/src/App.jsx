@@ -6,7 +6,8 @@ import NotFound from './pages/NotFound';
 import { route_map } from './constants.js';
 import CO2Calculator from './pages/CO2Calculator/CO2Calculator.jsx';
 import CO2CalculatorOnline from './pages/CO2Calculator/CO2CalculatorOnline.jsx';
-
+import Phreeqc from "./pages/Phreeqc/Phreeqc.jsx"
+import PhreeqcOnline from "./pages/Phreeqc/PhreeqcOnline.jsx"
 function App() {
   return (
     <Router>
@@ -16,6 +17,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="*" element={<NotFound />} />
 
+          <Route path={route_map.PHREEQC} element={<Phreeqc />}/>
+          <Route path={route_map.PHREEQC_ONLINE} element={<PhreeqcOnline />}/>
           <Route path={route_map.COTWO_CALCULATOR} element={<CO2Calculator />}/>
           <Route path={route_map.COTWO_CALCULATOR_ONLINE} element={<CO2CalculatorOnline />}/>
 

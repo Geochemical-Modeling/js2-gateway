@@ -1,6 +1,7 @@
 import React from 'react';
 import worldmap from '../../assets/worldmap.jpg';
 import { route_map } from '../constants';
+import {Link} from "react-router-dom"
 const Home = () => {
   return (
     <>
@@ -118,9 +119,9 @@ const Home = () => {
               SupPhreeqc: A program to generate customized Phreeqc thermodynamic
               database based on Supcrtbl. Computers & Geosciences. v143. ).
             </p>
-            <a target="_blank" href="#0" className="rvt-cta" rel="noreferrer">
+            <Link to={route_map.PHREEQC} className="rvt-cta" rel="noreferrer">
               Use PHREEQC High P-T
-            </a>
+            </Link>
             <hr />
             <h2>
               CO<sub>2</sub> Calculator
