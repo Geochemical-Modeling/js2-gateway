@@ -1,8 +1,74 @@
 import React from 'react';
 import worldmap from '../../assets/worldmap.jpg';
 import { route_map } from '../constants';
-import {Link} from "react-router-dom"
+import { Link } from 'react-router-dom';
 const Home = () => {
+  let alert = null;
+  // Get the alert from the query params, it can be one of the following:
+  // - login_sucessful
+  // - missing_email
+  // - invalid_userinfo_response
+  // - invalid_token_response
+  // - logout
+  const alertMessage = new URLSearchParams(window.location.search).get('alert');
+  let messageTemplate = function (type, message) {
+    return (
+      <div
+        class={`rvt-inline-alert rvt-inline-alert--standalone rvt-inline-alert--${type}`}
+      >
+        <span class="rvt-inline-alert__icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            viewBox="0 0 16 16"
+          >
+            {' '}
+            <path d="M9 7v5H7V7h2ZM8 4a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" />{' '}
+            <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6a6 6 0 1 0 0 12A6 6 0 0 0 8 2Z" />
+          </svg>
+        </span>
+        <span class="rvt-inline-alert__message" id="example-message-1">
+          <strong>{message}</strong>
+        </span>
+      </div>
+    );
+  };
+  if (alertMessage) {
+    switch (alertMessage) {
+      case 'login_successful':
+        alert = messageTemplate(
+          'success',
+          'You have successfully logged in. Welcome to the Geochemical Modeling Gateway!',
+        );
+        break;
+      case 'missing_email':
+        alert = messageTemplate(
+          'warning',
+          'No email associated with the login method you chose, please use a different method.',
+        );
+        break;
+      case 'invalid_userinfo_response':
+        alert = messageTemplate(
+          'danger',
+          'Invalid user information response. Please try again or use a different method.',
+        );
+        break;
+      case 'invalid_token_response':
+        alert = messageTemplate(
+          'danger',
+          'Invalid token response. Please try again or use a different method.',
+        );
+        break;
+      case 'logout':
+        alert = messageTemplate('info', 'You have successfully logged out.');
+        break;
+      default:
+        alert = null;
+    }
+  }
+
   return (
     <>
       <main
@@ -13,7 +79,13 @@ const Home = () => {
           <div className="rvt-flow rvt-prose">
             <h1>Geochemical Modeling Gateway</h1>
           </div>
-
+          {alert}
+          {/* Don't let these classes be purged in the build stage */}
+          <div class={`rvt-inline-alert--info hidden`}></div>
+          <div class={`rvt-inline-alert--danger hidden`}></div>
+          <div class={`rvt-inline-alert--success hidden`}></div>
+          <div class={`rvt-inline-alert--warning hidden`}></div>
+          {/* End of the CSS that may get purged */}
           <div className="rvt-prose rvt-flow rvt-border-top rvt-p-top-lg rvt-m-top-md">
             <div className="rvt-layout__feature-slot">
               <div className="rvt-card rvt-card--raised">
@@ -73,9 +145,9 @@ const Home = () => {
               to 1000°C, but the ranges exceed the original limits stated for
               minerals in Johnson et al. (1992) and vary for individual species.
             </p>
-            <a target="_blank" href="#0" className="rvt-cta" rel="noreferrer">
+            <Link href="#0" className="rvt-cta" rel="noreferrer">
               Use SUPCRTBL
-            </a>
+            </Link>
             <hr />
             <h2>PHREEQC High P-T</h2>
             <p>
@@ -132,20 +204,28 @@ const Home = () => {
               and from 0 to 2000 bar using the model by Duan, Sun, Zhu, Chou
               (2006).
             </p>
-            <a target="_blank" href={route_map.COTWO_CALCULATOR} className="rvt-cta" rel="noreferrer">
+            <Link
+              to={route_map.COTWO_CALCULATOR}
+              className="rvt-cta"
+              rel="noreferrer"
+            >
               Use CO<sub>2</sub> Calculator
-            </a>
+            </Link>
             <hr />
             <h2>Rates Calculator</h2>
             <p>
               Calculates far-from-equilibrium dissolution rates at a temperature
               and pH of your interest.
             </p>
-            <a target="_blank" href="#0" className="rvt-cta" rel="noreferrer">
+            <Link
+              to={route_map.RATE_CALCULATOR}
+              className="rvt-cta"
+              rel="noreferrer"
+            >
               Use Rates Calculator
-            </a>
+            </Link>
             <hr />
-            <p>PHREEQC BASIC Rate Scripts</p>
+            <h2>PHREEQC BASIC Rate Scripts</h2>
             <p>
               A library of RATES blocks for about 100 minerals in BASIC scripts.
               The scripts can also be used as templates for writing other rate
@@ -159,17 +239,25 @@ const Home = () => {
               interest, you can use the rate calculator below. All phases in the
               library are included in the calculator.
             </p>
-            <a target="_blank" href="#0" className="rvt-cta" rel="noreferrer">
-              Use Rates Calculator
-            </a>
+            <Link
+              to={route_map.RATE_SCRIPTS}
+              className="rvt-cta"
+              rel="noreferrer"
+            >
+              Go to Rate Scripts
+            </Link>
             <hr />
             <h2>
               H<sub>2</sub>S Calculator
             </h2>
             <p>An online program to calculate H2S solubility.</p>
-            <a target="_blank" href="#0" className="rvt-cta" rel="noreferrer">
+            <Link
+              to={route_map.H2S_CALCULATOR}
+              className="rvt-cta"
+              rel="noreferrer"
+            >
               Use H<sub>2</sub>S Calculator
-            </a>
+            </Link>
           </div>
         </div>
       </main>

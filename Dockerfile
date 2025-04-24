@@ -8,9 +8,13 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 ADD backend/pyproject.toml .
-COPY --chmod=755 backend/app/ ./app
+RUN uv sync
+
+COPY backend/app/ ./app
 COPY frontend/dist ./dist
 
-RUN uv sync
+# Giving execution permissions for binaries
+RUN chmod +x /app/app/routes/co2/main
+RUN chmod +x /app/app/routes/phreeqc/phreeqc
 
 CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0"]

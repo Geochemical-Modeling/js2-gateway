@@ -7,10 +7,9 @@ from zipfile import ZipFile
 import re
 from datetime import datetime
 router = APIRouter()
-
 from typing import Annotated
 
-@router.post("")
+@router.post("/api/phreeqc")
 async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[str, Form()], selectedDataFile: Annotated[str, Form()], customDataFile: Union[UploadFile, None] = None):  
   timestamp = int(datetime.now().timestamp())
   exp_id = f"{timestamp}"
@@ -100,7 +99,6 @@ async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[s
       arcname = os.path.basename(outputFileDir)
       zip_object.write(outputFileDir, arcname=arcname)
       
-    
     # Read data from the phreeqc output file
     with open(outputFileDir, "r") as f:
       data = {
@@ -118,8 +116,7 @@ async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[s
     print("Error: ", e)
     raise HTTPException(status_code=500, detail="Internal Server Error")
     
-
-@router.get("/download/{experiment_id}")
+@router.get("/api/phreeqc/download/{experiment_id}")
 def download_file(experiment_id: str):
   """Finds the experiments directory associated with an experiment_id and returns the zip file"""
   output_dir = os.path.join(os.path.dirname(__file__), "nextTDB_workdirs", experiment_id,  "output")

@@ -1,67 +1,73 @@
-import React, { useState } from "react"
-import Alert from "../../components/Alert";
+import React, { useState } from 'react';
+import Alert from '../../components/Alert';
 const calculatorInputs = [
   {
-    label: "Please enter a temperature (K) between 273-533:",
-    name: "temp",
+    label: 'Please enter a temperature (K) between 273-533:',
+    name: 'temp',
   },
   {
-    label: "Please enter a pressure (bar) between 0-2000:",
-    name: "bar",
+    label: 'Please enter a pressure (bar) between 0-2000:',
+    name: 'bar',
   },
   {
-    label: "Please enter NaCl (mol/kgH20) between 0-4.5:",
-    name: "mNaCl",
+    label: 'Please enter NaCl (mol/kgH20) between 0-4.5:',
+    name: 'mNaCl',
   },
 ];
 
 export default function CO2CalculatorOnline() {
   const [formData, setFormData] = useState({
-    temp: "",
-    bar: "",
-    mNaCl: "",
+    temp: '',
+    bar: '',
+    mNaCl: '',
   });
-  const [error, setError] = useState(null)
-  const [data, setData] = useState(null)
+  const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Convert string data to floats to make the client side validation work
-    const temp = parseFloat(formData.temp)
-    const bar = parseFloat(formData.bar)
-    const mNaCl = parseFloat(formData.mNaCl)
+    const temp = parseFloat(formData.temp);
+    const bar = parseFloat(formData.bar);
+    const mNaCl = parseFloat(formData.mNaCl);
 
     if (temp < 273 || temp > 533) {
-      setError("Temperature is out of bounds: T-P-X range of this model: 273-533 K, 0-2000 bar, 0-4.5 mNaCl!")
+      setError(
+        'Temperature is out of bounds: T-P-X range of this model: 273-533 K, 0-2000 bar, 0-4.5 mNaCl!',
+      );
       return;
     }
     if (bar < 0 || bar > 2000) {
-      setError("Pressure is out of bounds: T-P-X range of this model: 273-533 K, 0-2000 bar, 0-4.5 mNaCl!")
+      setError(
+        'Pressure is out of bounds: T-P-X range of this model: 273-533 K, 0-2000 bar, 0-4.5 mNaCl!',
+      );
       return;
     }
     if (mNaCl < 0 || mNaCl > 4.5) {
-      setError("mNaCl is out of bounds: T-P-X range of this model: 273-533 K, 0-2000 bar, 0-4.5 mNaCl!")
+      setError(
+        'mNaCl is out of bounds: T-P-X range of this model: 273-533 K, 0-2000 bar, 0-4.5 mNaCl!',
+      );
       return;
     }
 
     try {
-      const url = `/api/co2?temp=${temp}&bar=${bar}&mNaCl=${mNaCl}`
-      const response = await fetch(url)
-      const JSON = await response.json()
+      const url = `/api/co2?temp=${temp}&bar=${bar}&mNaCl=${mNaCl}`;
+      const response = await fetch(url);
+      const JSON = await response.json();
       if (response.ok) {
         // Assuming the data we get is a string that we need to clean
-        setData(JSON.data)
-        setError(null)
+        setData(JSON.data);
+        setError(null);
       } else {
-        // Handle server-side errors 
-        setError(JSON.message)
+        // Handle server-side errors
+        setError(JSON.message);
       }
     } catch (err) {
       // Handle network errors
-      setError(err.message)
+      setError(err.message);
     }
-  }
+  };
 
   /**
    * Function that handles updating the state when the input fields change.
@@ -77,19 +83,28 @@ export default function CO2CalculatorOnline() {
   };
 
   return (
-    <main id="main-content" className="rvt-layout__wrapper rvt-layout__wrapper--single rvt-container-sm">
+    <main
+      id="main-content"
+      className="rvt-layout__wrapper rvt-layout__wrapper--single rvt-container-sm"
+    >
       <div className="rvt-layout__content">
-        
         {/* Header with meta info and citation*/}
         <header>
-          <h2 className="rvt-ts-md">CO2 SOLUBILITY CALCULATOR</h2>
+          <h2 className="rvt-ts-md">
+            CO<sub>2</sub> Solubility Calculator
+          </h2>
           <hr />
           <div className="rvt-card rvt-card--raised">
             <div className="rvt-card__body">
-              <h2 className="rvt-card__title" style={{ fontWeight: "bold", color: "#343a40" }}>
+              <h2
+                className="rvt-card__title"
+                style={{ fontWeight: 'bold', color: '#343a40' }}
+              >
                 Acknowledgment and Citation
               </h2>
-              <h3 style={{ fontStyle: "italic", color: "#6c757d" }}>Users please cite this</h3>
+              <h3 style={{ fontStyle: 'italic', color: '#6c757d' }}>
+                Users please cite this
+              </h3>
               <div className="rvt-card__content [ rvt-flow ]">
                 <p>
                   Duan Z.H., Sun R., Zhu Chen, Chou I-M (2006) An improved model
@@ -97,12 +112,14 @@ export default function CO2CalculatorOnline() {
                   containing Na<sup>+</sup>, K<sup>+</sup>, Ca<sup>2+</sup>, Mg
                   <sup>2+</sup>, Cl<sup>-</sup>, and SO<sub>4</sub>
                   <sup>2-</sup>–<i>Marine Chemistry</i>, Volume 98, Issues 2–4,
-                  Pages 131-139. 
+                  Pages 131-139.
                   <a
-                  href="https://www.sciencedirect.com/science/article/pii/S0304420305001118?via%3Dihub"
-                  className="rvt-color-crimson-700"
-                  >DOI</a>
-                </p>          
+                    href="https://www.sciencedirect.com/science/article/pii/S0304420305001118?via%3Dihub"
+                    className="rvt-color-crimson-700"
+                  >
+                    DOI
+                  </a>
+                </p>
               </div>
             </div>
           </div>
@@ -110,67 +127,80 @@ export default function CO2CalculatorOnline() {
 
         <br />
 
-        {
-          data && (
-            <div className="rvt-card rvt-card--raised">
-              <div className="rvt-card__body">
-                <h2 className="rvt-card__title rvt-text-medium">
-                  CO2 Calculator Results
-                </h2>
-                <div className="rvt-card__content [ rvt-flow ]">
-                  {/* Show the results here */}
-                    <div className="co2-result">
-                      <h2>CO2 Solubility in Aqueous NaCl Solution</h2>
-                      <p>
-                        <strong>Reference:</strong> Duan Z, Sun R, Zhu C, Chou I (Marine Chemistry, 2006, v98, 131-139)
-                      </p>
-                      <p>
-                        <strong>T-P-X range of this model:</strong> 273-533 K, 0-2000 bar, 0-4.5 mNaCl
-                      </p>
-                      <p>
-                        <strong>Units:</strong> T: K, P(total): bar, mNaCl and mCO2: mol/kgH2O
-                      </p>
-                      <hr />
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>T(K)</th>
-                            <th>P(bar)</th>
-                            <th>mNaCl(m)</th>
-                            <th>mCO2(m)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>{data.temp}</td>
-                            <td>{data.bar}</td>
-                            <td>{data.mNaCl}</td>
-                            <td>{data.mCO2}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>    
-                </div> 
+        {data && (
+          <div className="rvt-card rvt-card--raised">
+            <div className="rvt-card__body">
+              <h2 className="rvt-card__title rvt-text-medium">
+                CO<sub>2</sub> Calculator Results
+              </h2>
+              <div className="rvt-card__content [ rvt-flow ]">
+                {/* Show the results here */}
+                <div className="co2-result">
+                  <h2>
+                    CO<sub>2</sub> Solubility in Aqueous NaCl Solution
+                  </h2>
+                  <p>
+                    <strong>Reference:</strong> Duan Z, Sun R, Zhu C, Chou I
+                    (Marine Chemistry, 2006, v98, 131-139)
+                  </p>
+                  <p>
+                    <strong>T-P-X range of this model:</strong> 273-533 K,
+                    0-2000 bar, 0-4.5 mNaCl
+                  </p>
+                  <p>
+                    <strong>Units:</strong> T: K, P(total): bar, mNaCl and mCO2:
+                    mol/kgH2O
+                  </p>
+                  <hr />
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>T(K)</th>
+                        <th>P(bar)</th>
+                        <th>mNaCl(m)</th>
+                        <th>mCO2(m)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>{data.temp}</td>
+                        <td>{data.bar}</td>
+                        <td>{data.mNaCl}</td>
+                        <td>{data.mCO2}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-
-          )
-        }
+          </div>
+        )}
 
         {/* Input Form  */}
         <form onSubmit={handleSubmit}>
-           {
-              error && (
-                <Alert title="Error when working with CO2 Calculator" subtitle={error} type="error"/>
-            )}      
-          {
-            calculatorInputs.map((input) => (
-              <div>
-                <label className="rvt-label [ rvt-m-top-md ]">{input.label}</label>
-                <input required type="text" id="text-input-info" className="rvt-text-input rvt-validation-info" name={input.name} value={formData[input.name]} onChange={(e) => handleChange(input.name, e.target.value)}/>
-              </div>
-            ))
-          }
+          {error && (
+            <Alert
+              title="Error when working with CO2 Calculator"
+              subtitle={error}
+              type="error"
+            />
+          )}
+          {calculatorInputs.map((input) => (
+            <div>
+              <label className="rvt-label [ rvt-m-top-md ]">
+                {input.label}
+              </label>
+              <input
+                required
+                type="text"
+                id="text-input-info"
+                className="rvt-text-input rvt-validation-info"
+                name={input.name}
+                value={formData[input.name]}
+                onChange={(e) => handleChange(input.name, e.target.value)}
+              />
+            </div>
+          ))}
           <button className="rvt-button rvt-m-top-sm" type="submit">
             Submit
           </button>

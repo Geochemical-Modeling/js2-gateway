@@ -9,7 +9,7 @@ make frontend # Runs 'npm run dev' in the frontend folder
 ```
 
 ### Running a minimal stack
-Useful for quickly weeding out any errors before a deployment as well as making sure the backend is working as expected. This is the preferred way of testing out the backend and to be clear it does run in a container.
+Useful for quickly weeding out any errors before a deployment as well as making sure the backend is working as expected. This is the preferred way of testing out the backend and to be clear it does run in a container. To bypass auth and develop the full stack application locally, access the page via `http://127.0.0.1:4000` instead of `http://localhost:4000`.
 ```sh
 make up # Builds and spins up the frontend and backend components with a Docker Compose
 make down # Shutsdown all of the Docker Compose containers
@@ -27,7 +27,7 @@ make deploy # Simulates a deployment on your local, single node Docker Swarm Clu
 - [x] Rewrite React components in [IU's Rivet Design System](https://rivet.iu.edu/)
 - [x] FastAPI backend
   - [x] Serve SPA
-  - [ ] Handle Auth
+  - [x] Handle Auth
   - [ ] Handle legacy PHP applications 
 - [x] CILogon Credentials
 
