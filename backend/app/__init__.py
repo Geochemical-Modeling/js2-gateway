@@ -1,4 +1,4 @@
-from app.routes import auth
+from app.routes import auth, user
 from app.routes.co2 import co2_calc
 
 from fastapi import FastAPI, HTTPException, Request
@@ -36,6 +36,7 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
 app.include_router(co2_calc.router, prefix="/api/co2", tags=["CO2"])
 app.include_router(auth.router, tags=["auth"])
+app.include_router(user.router, tags=["user"])
 
 # Serve all static files (JS, CSS, images, etc.)
 app.mount("/static", StaticFiles(directory="/app/dist/static"), name="static")

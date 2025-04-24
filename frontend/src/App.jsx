@@ -6,27 +6,52 @@ import NotFound from './pages/NotFound';
 import { route_map } from './constants.js';
 import CO2Calculator from './pages/CO2Calculator/CO2Calculator.jsx';
 import CO2CalculatorOnline from './pages/CO2Calculator/CO2CalculatorOnline.jsx';
+import Onboarding from './pages/Onboarding';
+import AdminPage from './pages/AdminPage';
+import { AuthProvider } from './AuthContext';
+import OnboardingCheck from './components/onboarding_check';
+import ApprovalRequired from './components/approval_required';
 
 function App() {
   return (
-    <Router>
-      <HomeNotificationToast />
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="*" element={<NotFound />} />
+    <AuthProvider>
+      <Router>
+        <OnboardingCheck />
+        <HomeNotificationToast />
+        <Routes>
+          <Route element={<Layout />}>
+            {/* Public routes accessible to all users */}
+            <Route path="/" element={<Home />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path={route_map.ADMIN_PAGE} element={<AdminPage />} />
 
-          <Route
-            path={route_map.COTWO_CALCULATOR}
-            element={<CO2Calculator />}
-          />
-          <Route
-            path={route_map.COTWO_CALCULATOR_ONLINE}
-            element={<CO2CalculatorOnline />}
-          />
-        </Route>
-      </Routes>
-    </Router>
+            {/* Protected routes requiring approval */}
+            <Route element={<ApprovalRequired />}>
+              {/* Tool routes */}
+              <Route
+                path={route_map.COTWO_CALCULATOR}
+                element={<CO2Calculator />}
+              />
+              <Route
+                path={route_map.COTWO_CALCULATOR_ONLINE}
+                element={<CO2CalculatorOnline />}
+              />
+              <Route path={route_map.PHREEQC} element={<NotFound />} />
+              <Route path={route_map.SUPCRTBL} element={<NotFound />} />
+              <Route path={route_map.RATE_CALCULATOR} element={<NotFound />} />
+              <Route path={route_map.H2S_CALCULATOR} element={<NotFound />} />
+              <Route
+                path={route_map.SOLUBILITY_CALCULATOR}
+                element={<NotFound />}
+              />
+            </Route>
+
+            {/* Catch-all route for undefined paths */}
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

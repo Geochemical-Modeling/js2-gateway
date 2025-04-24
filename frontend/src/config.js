@@ -17,7 +17,9 @@ export const IS_AUTH_DISABLED = isDevelopmentHost || devModeManuallyEnabled;
 
 // To enable dev mode in browser console: localStorage.setItem('devMode', 'true')
 // To disable dev mode in browser console: localStorage.setItem('devMode', 'false')
-console.log(`Auth bypass ${IS_AUTH_DISABLED ? 'ENABLED' : 'DISABLED'}`);
+if (IS_AUTH_DISABLED) {
+  console.log(`Auth bypass 'ENABLED'`);
+}
 
 // Mock user data for development when auth is disabled
 export const DEV_USER = {
