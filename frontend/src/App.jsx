@@ -12,6 +12,8 @@ import { AuthProvider } from './AuthContext';
 import OnboardingCheck from './components/onboarding_check';
 import ApprovalRequired from './components/approval_required';
 import RateScripts from './pages/RateScripts.jsx';
+import RateCalculator from './pages/RateCalculator/RateCalculator.jsx';
+import RateCalculatorOnline from './pages/RateCalculator/RateCalculatorOnline.jsx';
 
 function App() {
   return (
@@ -40,6 +42,14 @@ function App() {
               <Route path={route_map.PHREEQC} element={<NotFound />} />
               <Route path={route_map.SUPCRTBL} element={<NotFound />} />
               <Route path={route_map.RATE_SCRIPTS} element={<RateScripts />} />
+              <Route
+                path={route_map.RATE_CALCULATOR}
+                element={<RateCalculator />}
+              />
+              <Route
+                path={route_map.RATE_CALCULATOR_ONLINE}
+                element={<RateCalculatorOnline />}
+              />
               <Route path={route_map.H2S_CALCULATOR} element={<NotFound />} />
               <Route
                 path={route_map.SOLUBILITY_CALCULATOR}
