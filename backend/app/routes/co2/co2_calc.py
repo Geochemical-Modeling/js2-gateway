@@ -52,7 +52,7 @@ def cleanData(data: str):
     return data_dict
 
 
-@router.get("")
+@router.get("/api/co2")
 def co2_calculator_interceptor(temp: float, bar: float, mNaCl: float):
 
     if temp < 273 or temp > 533:
