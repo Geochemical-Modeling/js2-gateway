@@ -217,7 +217,11 @@ const Home = () => {
               Calculates far-from-equilibrium dissolution rates at a temperature
               and pH of your interest.
             </p>
-            <Link to="#0" className="rvt-cta" rel="noreferrer">
+            <Link
+              to={route_map.RATE_CALCULATOR}
+              className="rvt-cta"
+              rel="noreferrer"
+            >
               Use Rates Calculator
             </Link>
             <hr />
