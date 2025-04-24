@@ -66,8 +66,6 @@ def send_new_user_notification(user_id: int, user_name: str, user_email: str) ->
     """
     Send notification emails about a new user to all admins.
     """
-    admin_email = settings.ADMIN_NOTIFICATION_EMAIL  # Temporary hardcoded admin email
-    
     subject = "New User Registration - Action Required"
     html_content = f"""
     <h2>New User Registration</h2>
@@ -80,20 +78,32 @@ def send_new_user_notification(user_id: int, user_name: str, user_email: str) ->
     <p><a href="{settings.FRONTEND_URL}/AdminPage">Go to Admin Panel</a></p>
     """
     
-    success = send_email(admin_email, subject, html_content)
+    all_sent = True
     
-    # Commented out section for sending to all admins (will be implemented later)
-    """
+    # Get all admin emails and send notifications
     with get_session() as session:
         if session:
             admin_emails = get_admin_emails(session)
+            
+            # If no admins found, use the fallback email from settings
+            if not admin_emails:
+                logger.warning("No admin users found in database, using fallback admin email")
+                admin_emails = [settings.ADMIN_NOTIFICATION_EMAIL]
+            
+            logger.info(f"Sending new user notification to {len(admin_emails)} admins")
+            
             for admin_email in admin_emails:
                 success = send_email(admin_email, subject, html_content)
                 if not success:
                     logger.error(f"Failed to send admin notification to {admin_email}")
-    """
+                    all_sent = False
+        else:
+            # Fallback to settings email if database session couldn't be created
+            logger.warning("Database session unavailable, using fallback admin email")
+            success = send_email(settings.ADMIN_NOTIFICATION_EMAIL, subject, html_content)
+            all_sent = success
     
-    return success
+    return all_sent
 
 def send_user_pending_notification(user_email: str, user_name: str) -> bool:
     """
