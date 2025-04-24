@@ -235,8 +235,12 @@ const Home = () => {
               interest, you can use the rate calculator below. All phases in the
               library are included in the calculator.
             </p>
-            <Link to="#0" className="rvt-cta" rel="noreferrer">
-              Use Rates Calculator
+            <Link
+              to={route_map.RATE_SCRIPTS}
+              className="rvt-cta"
+              rel="noreferrer"
+            >
+              Go to Rate Scripts
             </Link>
             <hr />
             <h2>
