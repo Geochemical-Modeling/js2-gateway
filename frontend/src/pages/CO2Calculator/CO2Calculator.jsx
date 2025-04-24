@@ -11,28 +11,31 @@ export default function CO2Calculator() {
       <div className="rvt-layout__content">
         <header>
           <h2 className="rvt-ts-lg rvt-text-medium">
-            CO2 SOLUBILITY CALCULATOR
+            CO<sub>2</sub> Solubility Calculator
           </h2>
           <Link
             className="App-links__item"
             to={route_map.COTWO_CALCULATOR_ONLINE}
           >
-            <h4>Online CO2 Solubility Calculator</h4>
+            <h4>
+              CO<sub>2</sub> Solubility Calculator
+            </h4>
           </Link>
         </header>
         <br />
         <p>
-          An online program to calculate CO2 solubility in pure water and
-          aqueous NaCl solutions (0-4.5 m) from 273 to 533K and from 0 to 2000
-          bar. The FORTRAN code is written by Sun Rui, now a professor at
+          An online program to calculate CO<sub>2</sub> solubility in pure water
+          and aqueous NaCl solutions (0-4.5 m) from 273 to 533K and from 0 to
+          2000 bar. The FORTRAN code is written by Sun Rui, now a professor at
           Northwest University in China. Please refer to the article below for
           further details and to cite in your publications:
         </p>
 
         <p>
           Duan ZH, Sun R, Zhu Chen, Chou I-M (2006) An improved model for the
-          calculation of CO2 solubility in aqueous solutions containing Na+, K+,
-          Ca2+, Mg2+, Cl−, and SO42− Marine Chemistry 98 (2-4):131-139,{' '}
+          calculation of CO<sub>2</sub> solubility in aqueous solutions
+          containing Na+, K+, Ca2+, Mg2+, Cl-, and SO42- Marine Chemistry 98
+          (2-4):131-139,{' '}
           <a
             className="App-links__item"
             href="https://www.sciencedirect.com/science/article/pii/S0304420305001118?via%3Dihub"
