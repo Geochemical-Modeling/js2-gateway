@@ -13,6 +13,7 @@ import OnboardingCheck from './components/onboarding_check';
 import ApprovalRequired from './components/approval_required';
 import RateScripts from './pages/RateScripts.jsx';
 import H2SCalculator from './pages/H2SCalculator/H2SCalculator.jsx';
+import H2SCalculatorOnline from './pages/H2SCalculator/H2SCalculatorOnline.jsx';
 
 function App() {
   return (
@@ -44,6 +45,10 @@ function App() {
               <Route
                 path={route_map.H2S_CALCULATOR}
                 element={<H2SCalculator />}
+              />
+              <Route
+                path={route_map.H2S_CALCULATOR_ONLINE}
+                element={<H2SCalculatorOnline />}
               />
               <Route
                 path={route_map.SOLUBILITY_CALCULATOR}

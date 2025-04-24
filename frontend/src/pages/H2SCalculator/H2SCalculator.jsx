@@ -18,7 +18,7 @@ export default function H2SCalculator() {
             to={route_map.H2S_CALCULATOR_ONLINE}
           >
             <h4>
-              CO<sub>2</sub> Solubility Calculator
+              H<sub>2</sub>S Solubility Calculator
             </h4>
           </Link>
         </header>

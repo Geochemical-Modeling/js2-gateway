@@ -92,7 +92,9 @@ export default function CO2CalculatorOnline() {
       <div className="rvt-layout__content">
         {/* Header with meta info and citation*/}
         <header>
-          <h2 className="rvt-ts-md">CO2 SOLUBILITY CALCULATOR</h2>
+          <h2 className="rvt-ts-md">
+            CO<sub>2</sub> Solubility Calculator
+          </h2>
           <hr />
           <div className="rvt-card rvt-card--raised">
             <div className="rvt-card__body">
@@ -131,12 +133,14 @@ export default function CO2CalculatorOnline() {
           <div className="rvt-card rvt-card--raised">
             <div className="rvt-card__body">
               <h2 className="rvt-card__title rvt-text-medium">
-                CO2 Calculator Results
+                CO<sub>2</sub> Calculator Results
               </h2>
               <div className="rvt-card__content [ rvt-flow ]">
                 {/* Show the results here */}
                 <div className="co2-result">
-                  <h2>CO2 Solubility in Aqueous NaCl Solution</h2>
+                  <h2>
+                    CO<sub>2</sub> Solubility in Aqueous NaCl Solution
+                  </h2>
                   <p>
                     <strong>Reference:</strong> Duan Z, Sun R, Zhu C, Chou I
                     (Marine Chemistry, 2006, v98, 131-139)
