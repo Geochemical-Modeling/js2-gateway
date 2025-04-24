@@ -52,6 +52,7 @@ function App() {
                 path={route_map.H2S_CALCULATOR_ONLINE}
                 element={<H2SCalculatorOnline />}
               />
+              <Route
                 path={route_map.RATE_CALCULATOR}
                 element={<RateCalculator />}
               />
