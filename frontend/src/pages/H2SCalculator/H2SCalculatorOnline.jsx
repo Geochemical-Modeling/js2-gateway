@@ -493,7 +493,7 @@ export default function H2SCalculatorOnline() {
       <div className="rvt-layout__content">
         <header>
           <h2 className="rvt-ts-lg rvt-text-medium">
-            H<sub>2</sub>S SOLUBILITY CALCULATOR
+            H<sub>2</sub>S Solubility Calculator
           </h2>
           <hr />
         </header>
