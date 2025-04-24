@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
+import LoginRequired from './login_required';
 
 /**
  * Higher-order component that ensures users are both authenticated and approved
@@ -17,7 +18,7 @@ function ApprovalRequired() {
 
   // If the user is not authenticated, redirect to home page
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <LoginRequired />;
   }
 
   // If the user is authenticated but not approved, show the pending page

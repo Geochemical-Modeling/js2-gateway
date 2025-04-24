@@ -1,4 +1,4 @@
-function Blank() {
+function LoginRequired() {
   return (
     <main
       id="main-content"
@@ -14,4 +14,4 @@ function Blank() {
     </main>
   );
 }
-export default Blank;
+export default LoginRequired;
