@@ -12,6 +12,8 @@ import { AuthProvider } from './AuthContext';
 import OnboardingCheck from './components/onboarding_check';
 import ApprovalRequired from './components/approval_required';
 import RateScripts from './pages/RateScripts.jsx';
+import H2SCalculator from './pages/H2SCalculator/H2SCalculator.jsx';
+import H2SCalculatorOnline from './pages/H2SCalculator/H2SCalculatorOnline.jsx';
 import RateCalculator from './pages/RateCalculator/RateCalculator.jsx';
 import RateCalculatorOnline from './pages/RateCalculator/RateCalculatorOnline.jsx';
 
@@ -43,6 +45,13 @@ function App() {
               <Route path={route_map.SUPCRTBL} element={<NotFound />} />
               <Route path={route_map.RATE_SCRIPTS} element={<RateScripts />} />
               <Route
+                path={route_map.H2S_CALCULATOR}
+                element={<H2SCalculator />}
+              />
+              <Route
+                path={route_map.H2S_CALCULATOR_ONLINE}
+                element={<H2SCalculatorOnline />}
+              />
                 path={route_map.RATE_CALCULATOR}
                 element={<RateCalculator />}
               />

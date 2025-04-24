@@ -251,7 +251,11 @@ const Home = () => {
               H<sub>2</sub>S Calculator
             </h2>
             <p>An online program to calculate H2S solubility.</p>
-            <Link to="#0" className="rvt-cta" rel="noreferrer">
+            <Link
+              to={route_map.H2S_CALCULATOR}
+              className="rvt-cta"
+              rel="noreferrer"
+            >
               Use H<sub>2</sub>S Calculator
             </Link>
           </div>
