@@ -23,7 +23,7 @@ export default function PhreeqcOnline() {
     outputFileName: '',
     selectedDataOption: 'custom', // default radio
     customDataFile: null,
-    selectedDataFile: databaseOptionList[0],
+    dataFileChoice: databaseOptionList[0],
   });
 
   const [copied, setCopied] = useState(false);
@@ -49,7 +49,7 @@ export default function PhreeqcOnline() {
       submitData.append('customDataFile', formData.customDataFile);
     } else {
       // Else the user picked to select the name of some data file
-      submitData.append('selectedDataFile', formData.selectedDataFile);
+      submitData.append('dataFileChoice', formData.dataFileChoice);
     }
 
     try {
@@ -268,8 +268,8 @@ export default function PhreeqcOnline() {
               <select
                 id="select-input-default"
                 className="rvt-select"
-                name="selectedDataFile"
-                defaultValue={formData.selectedDataFile}
+                name="dataFileChoice"
+                defaultValue={formData.dataFileChoice}
                 onChange={handleInputChange}
               >
                 {databaseOptionList.map((el, index) => (

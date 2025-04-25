@@ -2,7 +2,7 @@ import subprocess
 from fastapi import APIRouter, HTTPException, File, Form, UploadFile
 from fastapi.responses import FileResponse
 import os
-from typing import Union
+from typing import Union, Optional
 from zipfile import ZipFile
 import re
 from datetime import datetime
@@ -10,7 +10,7 @@ router = APIRouter()
 from typing import Annotated
 
 @router.post("/api/phreeqc")
-async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[str, Form()], selectedDataFile: Annotated[str, Form()], customDataFile: Union[UploadFile, None] = None):  
+async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[str, Form()], dataFileChoice: Optional[str] = Form(None), customDataFile: Union[UploadFile, None] = None):  
   timestamp = int(datetime.now().timestamp())
   exp_id = f"{timestamp}"
   cwd = os.path.join(os.path.dirname(__file__), "nextTDB_workdirs", exp_id)
@@ -67,7 +67,7 @@ async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[s
       raise HTTPException(status_code=500, detail="Failed to parse your custom database file. Please double check it and try again later!")
   else:
     # Calculate path to the data file relative to this python file
-    datFileDir = os.path.join(os.path.dirname(__file__), "database", selectedDataFile)
+    datFileDir = os.path.join(os.path.dirname(__file__), "database", dataFileChoice)
     if not os.path.exists(datFileDir):
       raise HTTPException(status_code=500, detail=f"Data file: {customDataFile} wasn't found in our records.")
   
