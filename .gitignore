@@ -1,4 +1,3 @@
 .env
 .env.dev
-/nextTDB_workdirs/
 backend/app/routes/phreeqc/nextTDB_workdirs/

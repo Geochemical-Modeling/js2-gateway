@@ -58,6 +58,7 @@ export default function PhreeqcOnline() {
         body: submitData,
       });
       const JSON = await response.json();
+
       if (!response.ok) {
         // Render the server side error
         setError(JSON.message);
@@ -72,7 +73,7 @@ export default function PhreeqcOnline() {
       setData(data);
     } catch (err) {
       // Set the error state here for that network error or something else
-      setError(err);
+      setError(err.message);
     }
   };
 

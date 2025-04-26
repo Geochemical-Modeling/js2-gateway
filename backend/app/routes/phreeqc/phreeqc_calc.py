@@ -9,6 +9,22 @@ from datetime import datetime
 router = APIRouter()
 from typing import Annotated
 
+databaseOptionList = [
+  'geothermal.dat',
+  'geothermal-ree.dat',
+  'diagenesis.dat',
+  'bl-0.5kb.dat',
+  'bl-1kb.dat',
+  'bl-2kb.dat',
+  'bl-2kb-ree.dat',
+  'bl-5kb.dat',
+  'llnl-kinetics.dat',
+];
+
+def sanitize_filename(filename: str) -> str:
+  """Sanitizes filename to prevent directory traversal attacks. We'll prevent patterns like "..", "/", "\", *, : in the file name."""
+  return re.sub(r"([^\w\s\-~,\[\].])", '', filename)
+
 @router.post("/api/phreeqc")
 async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[str, Form()], dataFileChoice: Optional[str] = Form(None), customDataFile: Union[UploadFile, None] = None):  
   timestamp = int(datetime.now().timestamp())
@@ -28,11 +44,11 @@ async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[s
   os.makedirs(outputDir, exist_ok=True)
   os.makedirs(userGenDir, exist_ok=True)
   
-  # - Sanitize the input and output file names to prevent path traversals.
-  outputFileName = re.sub(r"([^\w\s\d\-_~,\[\].])", '', outputFileName)
-  inputFileName = re.sub(r"([^\w\s\d\-_~,\[\].])", '', inputFile.filename)
+  outputFileName = sanitize_filename(outputFileName)
+  inputFile.filename = sanitize_filename(inputFile.filename)
+  
   outputFileDir = os.path.join(outputDir, outputFileName)
-  inputFileDir = os.path.join(inputDir, inputFileName)
+  inputFileDir = os.path.join(inputDir, inputFile.filename)
   files = []
   contents = (await inputFile.read()).decode("utf-8")
   lines = re.split(f'\r\n|\r|\n', contents)
@@ -58,6 +74,7 @@ async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[s
   # Calculate datFilePath based on whether customDataFile exists
   datFileDir = ""
   if (customDataFile):
+    customDataFile.filename = sanitize_filename(customDataFile.filename)
     datFileDir = os.path.join(inputDir, customDataFile.filename)
     try:
       with open(datFileDir, "w") as f:
@@ -66,10 +83,15 @@ async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[s
     except:
       raise HTTPException(status_code=500, detail="Failed to parse your custom database file. Please double check it and try again later!")
   else:
-    # Calculate path to the data file relative to this python file
+    
+    # Ensure the name of the data file that they pick is allowed by us.
+    if dataFileChoice not in databaseOptionList:
+      raise HTTPException(status_code=400, detail=f"'{dataFileChoice}' is not a supported database file!")
+    
+    # If a path isn't found, this is our fault since it should exist.
     datFileDir = os.path.join(os.path.dirname(__file__), "database", dataFileChoice)
     if not os.path.exists(datFileDir):
-      raise HTTPException(status_code=500, detail=f"Data file: {customDataFile} wasn't found in our records.")
+      raise HTTPException(status_code=500, detail=f"Data file: {dataFileChoice} wasn't found in our records.")
   
 
   binary_path = os.path.join(os.path.dirname(__file__), "phreeqc")
