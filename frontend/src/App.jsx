@@ -16,6 +16,8 @@ import H2SCalculator from './pages/H2SCalculator/H2SCalculator.jsx';
 import H2SCalculatorOnline from './pages/H2SCalculator/H2SCalculatorOnline.jsx';
 import RateCalculator from './pages/RateCalculator/RateCalculator.jsx';
 import RateCalculatorOnline from './pages/RateCalculator/RateCalculatorOnline.jsx';
+import Supcrtbl from './pages/Supcrtbl/Supcrtbl.jsx';
+import SupcrtbOnline from './pages/Supcrtbl/SupcrtblOnline.jsx';
 
 function App() {
   return (
@@ -28,6 +30,9 @@ function App() {
             {/* Public routes accessible to all users */}
             <Route path="/" element={<Home />} />
             <Route path="/onboarding" element={<Onboarding />} />
+
+            
+
             <Route path={route_map.ADMIN_PAGE} element={<AdminPage />} />
 
             {/* Protected routes requiring approval */}
@@ -42,7 +47,14 @@ function App() {
                 element={<CO2CalculatorOnline />}
               />
               <Route path={route_map.PHREEQC} element={<NotFound />} />
-              <Route path={route_map.SUPCRTBL} element={<NotFound />} />
+              
+              {/* Outside security checks for now */}
+              <Route path={route_map.SUPCRTBL} element={<Supcrtbl />} />
+              <Route
+                path={route_map.SUPCRTBL_ONLINE}
+                element={<SupcrtbOnline />}
+              />
+
               <Route path={route_map.RATE_SCRIPTS} element={<RateScripts />} />
               <Route
                 path={route_map.H2S_CALCULATOR}
