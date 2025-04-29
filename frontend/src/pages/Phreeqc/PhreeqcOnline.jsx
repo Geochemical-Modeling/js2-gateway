@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './PhreeqcOnline.css';
 import Alert from '../../components/Alert';
 import FileInput from '../../components/FileInput';
@@ -18,6 +19,7 @@ const databaseOptionList = [
 const phreeqc_url = '/api/phreeqc';
 
 export default function PhreeqcOnline() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     inputFile: '',
     outputFileName: '',
@@ -26,20 +28,14 @@ export default function PhreeqcOnline() {
     dataFileChoice: databaseOptionList[0],
   });
 
-  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [data, setData] = useState({
-    results: null,
-    experiment_id: null,
-  });
-
-  let experimentDownloadUrl = null;
-  if (data.experiment_id) {
-    experimentDownloadUrl = `${phreeqc_url}/download/${data.experiment_id}`;
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+
     const submitData = new FormData();
     submitData.append('inputFile', formData.inputFile);
     submitData.append('outputFileName', formData.outputFileName);
@@ -61,19 +57,17 @@ export default function PhreeqcOnline() {
 
       if (!response.ok) {
         // Render the server side error
-        setError(JSON.message);
+        setError(JSON.detail || 'An error occurred submitting your job');
+        setLoading(false);
         return;
       }
-      let data = JSON.data;
-      data.results = data.results
-        .replace(/\\t/g, '\t')
-        .replace('/\\n/g', '\n')
-        .trim();
 
-      setData(data);
+      // Navigate to the results page with the experiment ID
+      navigate(`/phreeqc/results/${JSON.data.experiment_id}`);
     } catch (err) {
       // Set the error state here for that network error or something else
-      setError(err.message);
+      setError(err.message || 'Network error occurred');
+      setLoading(false);
     }
   };
 
@@ -85,20 +79,6 @@ export default function PhreeqcOnline() {
   const handleFileChange = (e) => {
     const name = e.target.name;
     setFormData((prev) => ({ ...prev, [name]: e.target.files[0] }));
-  };
-
-  const handleClipBoardCopy = () => {
-    navigator.clipboard
-      .writeText(data.results)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => {
-          setCopied(false);
-        }, 2000);
-      })
-      .catch((err) => {
-        console.error('Failed to copy: ' + err);
-      });
   };
 
   return (
@@ -154,20 +134,6 @@ export default function PhreeqcOnline() {
           {'('}Please note: User-generated files with names containing spaces or
           special characters will not be accepted{')'}
         </p>
-
-        {/* Results section */}
-        {data.results && (
-          <div>
-            <h2 className="rvt-ts-md">Phreeqc Results: </h2>
-            <a href={experimentDownloadUrl}>Download Experiment Files</a>
-            <pre className="tsv-container">
-              <button className="copy-button" onClick={handleClipBoardCopy}>
-                {copied ? 'Copied!' : 'Copy'}
-              </button>
-              {data.results}
-            </pre>
-          </div>
-        )}
 
         {/* Error section */}
         {error && (
@@ -225,7 +191,7 @@ export default function PhreeqcOnline() {
                     name="selectedDataOption"
                     id="datFile-1"
                     value="custom"
-                    checked={formData.selectedDataOption == 'custom'}
+                    checked={formData.selectedDataOption === 'custom'}
                     onChange={handleInputChange}
                   />
                   <label htmlFor="datFile-1">Upload custom database file</label>
@@ -238,7 +204,7 @@ export default function PhreeqcOnline() {
                     name="selectedDataOption"
                     id="datFile-2"
                     value="existing"
-                    checked={formData.selectedDataOption == 'existing'}
+                    checked={formData.selectedDataOption === 'existing'}
                     onChange={handleInputChange}
                   />
                   <label htmlFor="datFile-2">Use existing database file</label>
@@ -283,9 +249,22 @@ export default function PhreeqcOnline() {
           ) : (
             <></>
           )}
-          <button className="rvt-button" type="submit">
-            SUBMIT
+          <button className="rvt-button" type="submit" disabled={loading}>
+            {loading ? 'SUBMITTING...' : 'SUBMIT'}
           </button>
+
+          {loading && (
+            <div className="rvt-loader rvt-loader--sm" aria-label="Loading">
+              <div className="rvt-loader__segment"></div>
+              <div className="rvt-loader__segment"></div>
+              <div className="rvt-loader__segment"></div>
+              <div className="rvt-loader__segment"></div>
+              <div className="rvt-loader__segment"></div>
+              <div className="rvt-loader__segment"></div>
+              <div className="rvt-loader__segment"></div>
+              <div className="rvt-loader__segment"></div>
+            </div>
+          )}
         </form>
       </div>
     </main>

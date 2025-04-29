@@ -18,6 +18,8 @@ import RateCalculator from './pages/RateCalculator/RateCalculator.jsx';
 import RateCalculatorOnline from './pages/RateCalculator/RateCalculatorOnline.jsx';
 import Phreeqc from './pages/Phreeqc/Phreeqc.jsx';
 import PhreeqcOnline from './pages/Phreeqc/PhreeqcOnline.jsx';
+import PhreeqcResults from './pages/Phreeqc/PhreeqcResults.jsx';
+
 function App() {
   return (
     <AuthProvider>
@@ -46,6 +48,10 @@ function App() {
               <Route
                 path={route_map.PHREEQC_ONLINE}
                 element={<PhreeqcOnline />}
+              />
+              <Route
+                path="/phreeqc/results/:experimentId"
+                element={<PhreeqcResults />}
               />
 
               <Route path={route_map.SUPCRTBL} element={<NotFound />} />

@@ -8,6 +8,7 @@ import re
 from datetime import datetime
 router = APIRouter()
 from typing import Annotated
+from . import process_manager
 
 databaseOptionList = [
   'geothermal.dat',
@@ -95,48 +96,91 @@ async def phreeqc_interceptor(inputFile: UploadFile, outputFileName: Annotated[s
   
 
   binary_path = os.path.join(os.path.dirname(__file__), "phreeqc")
+  
   try:
     input_data = (
         f"{inputFileDir}\n"
         f"{outputFileDir}\n"
         f"{datFileDir}\n"
     )
-    process = subprocess.Popen(
-        [binary_path],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    stdout, stderr = process.communicate(input=input_data, timeout=3)
-
-    # Create zip file, containing the outputFile and also the zip file
-    # NOTE: We use this arcname technique in order to avoid saving the whole path, because that actually results in us storing a zip file with 
-    # all the directories up to the base dir.
-    zip_file_dir = os.path.join(outputDir, f"{outputFileName}.zip")
-    with ZipFile(zip_file_dir, "w") as zip_object:
-      for file_path in files:
-        arcname = os.path.basename(file_path)
-        zip_object.write(file_path, arcname=arcname)
-      arcname = os.path.basename(outputFileDir)
-      zip_object.write(outputFileDir, arcname=arcname)
-      
-    # Read data from the phreeqc output file
-    with open(outputFileDir, "r") as f:
-      data = {
-        "data": {
-          "results": f.read(),
-          "experiment_id": exp_id
-        }
-      }
-      return data
     
-  except subprocess.CalledProcessError as e:
-    print("Process returned non-zero code: ", e.stderr)
-    raise HTTPException(status_code=500, detail="Internal Server Error")
+    # Start the PhreeQC job asynchronously using the process manager
+    process_manager.start_phreeqc_job(
+        exp_id=exp_id,
+        binary_path=binary_path,
+        input_data=input_data,
+        output_file_dir=outputFileDir,
+        files=files,
+        output_dir=outputDir,
+        output_file_name=outputFileName
+    )
+    
+    # Return immediately with the experiment ID
+    return {
+      "data": {
+        "experiment_id": exp_id,
+        "status": "submitted"
+      }
+    }
+    
   except Exception as e:
     print("Error: ", e)
     raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@router.get("/api/phreeqc/status/{experiment_id}")
+def check_status(experiment_id: str):
+  """Check the status of a PhreeQC job"""
+  status = process_manager.get_job_status(experiment_id)
+  
+  # Add experiment_id to the response
+  status["experiment_id"] = experiment_id
+  
+  return {
+    "data": status
+  }
+
+@router.get("/api/phreeqc/result/{experiment_id}")
+def get_results(experiment_id: str):
+  """Get the results of a completed PhreeQC job"""
+  # Check if the job is completed
+  status = process_manager.get_job_status(experiment_id)
+  if status["status"] != "completed" and status["status"] != "completed (lock file missing)":
+    return {
+      "data": {
+        "experiment_id": experiment_id,
+        "status": status["status"],
+        "message": "Job is not yet completed"
+      }
+    }
+  
+  # Find the output file
+  output_dir = os.path.join(os.path.dirname(__file__), "nextTDB_workdirs", experiment_id, "output")
+  if not os.path.exists(output_dir):
+    raise HTTPException(status_code=404, detail="Experiment output directory not found")
+  
+  # Get all files that are not zip files
+  output_files = [f for f in os.listdir(output_dir) if not f.lower().endswith(".zip") and not f.startswith(".")]
+  
+  if not output_files:
+    raise HTTPException(status_code=404, detail="No output files found")
+  
+  # Read the output file
+  output_file = output_files[0]  # Assuming there's only one output file
+  output_file_path = os.path.join(output_dir, output_file)
+  
+  try:
+    with open(output_file_path, "r", errors="ignore") as f:
+      results = f.read()
+    
+    return {
+      "data": {
+        "results": results,
+        "experiment_id": experiment_id,
+        "status": "completed"
+      }
+    }
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=f"Error reading output file: {str(e)}")
     
 @router.get("/api/phreeqc/download/{experiment_id}")
 def download_file(experiment_id: str):
