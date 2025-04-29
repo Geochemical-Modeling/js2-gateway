@@ -1,10 +1,7 @@
 import { route_map } from '../../constants';
+import { Link } from 'react-router-dom';
 
 const links = [
-  {
-    name: 'Click here to use the online version of ᴘʜʀᴇᴇǫᴄ High T P',
-    url: route_map.PHREEQC_ONLINE,
-  },
   // {
   //   name: "Version 3 Documentation by Parkhurst and Appelo (2013)",
   //   url: "https://pubs.usgs.gov/publication/tm6A43",
@@ -13,10 +10,6 @@ const links = [
   //   name: "Example Input Files",
   //   url: "https://www.resolutionmineeis.us/documents/parkhurst-appelo-2013",
   // },
-  {
-    name: 'USGS Software User Rights Notice',
-    url: 'https://water.usgs.gov/software/help/notice/',
-  },
 ];
 
 export default function Phreeqc() {
@@ -29,11 +22,22 @@ export default function Phreeqc() {
         <header>
           <h2 className="rvt-ts-lg rvt-text-medium">Introduction to Phreeqc</h2>
           <ul className="rvt-list-plain">
-            {links.map((el, index) => (
-              <li key={index}>
-                <a href={el.url}>{el.name}</a>
-              </li>
-            ))}
+            <li>
+              <Link
+                to={route_map.PHREEQC_ONLINE}
+                className="rvt-color-crimson-700"
+              >
+                Click here to use the online version of ᴘʜʀᴇᴇǫᴄ High T P
+              </Link>
+            </li>
+            <li>
+              <a
+                href="https://water.usgs.gov/software/help/notice/"
+                className="rvt-color-crimson-700"
+              >
+                USGS Software User Rights Notice
+              </a>
+            </li>
           </ul>
         </header>
 
@@ -52,7 +56,7 @@ export default function Phreeqc() {
               In the pulldown menu, you can find a number of thermodynamic
               datasets, which are documented in:
             </p>
-            <p style={{ fontFamily: 'Times New Roman', color: 'purple' }}>
+            <p>
               Zhang GR, Lu P, Zhang YL, Tu K, *Zhu C (2020) SupPHREEQC: A
               program to generate customized ᴘʜʀᴇᴇǫᴄ thermodynamic database
               based on Supcrtbl. Computer and Geosciences v143.{' '}
@@ -63,7 +67,7 @@ export default function Phreeqc() {
                 <b>DOI</b>
               </a>
             </p>
-            <p style={{ fontFamily: 'Times New Roman', color: 'purple' }}>
+            <p>
               Lu P, Zhang GR, Apps J, *Zhu C. (2022) Comparison of thermodynamic
               data files for PHREEQC. Earth-Science Reviews,{' '}
               <a
@@ -73,7 +77,7 @@ export default function Phreeqc() {
                 <b>DOI</b>
               </a>
             </p>
-            <p style={{ fontFamily: 'Times New Roman', color: 'purple' }}>
+            <p>
               Pan, RG, Gysi A, Migdisov A, Gong L, Lu P, Zhu* C (2024) Linear
               correlations of Gibbs free energy of REE phosphates (monazite,
               xenotime, and rhabdophane) and internally consistent binary mixing
