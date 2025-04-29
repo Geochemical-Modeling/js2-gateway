@@ -250,7 +250,7 @@ export default function PhreeqcOnline() {
             <></>
           )}
           <button className="rvt-button" type="submit" disabled={loading}>
-            {loading ? 'SUBMITTING...' : 'SUBMIT'}
+            {loading ? 'Submitting...' : 'Submit'}
           </button>
 
           {loading && (
