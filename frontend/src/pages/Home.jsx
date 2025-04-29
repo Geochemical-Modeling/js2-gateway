@@ -191,7 +191,7 @@ const Home = () => {
               SupPhreeqc: A program to generate customized Phreeqc thermodynamic
               database based on Supcrtbl. Computers & Geosciences. v143. ).
             </p>
-            <Link to="#0" className="rvt-cta" rel="noreferrer">
+            <Link to={route_map.PHREEQC} className="rvt-cta" rel="noreferrer">
               Use PHREEQC High P-T
             </Link>
             <hr />

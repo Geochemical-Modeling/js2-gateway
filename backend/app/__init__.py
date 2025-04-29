@@ -1,6 +1,7 @@
 from app.routes import auth, user
 from app.routes.co2 import co2_calc
 from app.routes.rate import rate_calc
+from app.routes.phreeqc import phreeqc_calc
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -34,8 +35,8 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         content=err_content,
     )
 
-
-app.include_router(co2_calc.router, tags=["CO2"])
+app.include_router(phreeqc_calc.router, tags=["phreeqc"])
+app.include_router(co2_calc.router, tags=["co2"])
 app.include_router(auth.router, tags=["auth"])
 app.include_router(user.router, tags=["user"])
 app.include_router(rate_calc.router, tags=["Rate"])

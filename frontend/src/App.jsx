@@ -16,6 +16,9 @@ import H2SCalculator from './pages/H2SCalculator/H2SCalculator.jsx';
 import H2SCalculatorOnline from './pages/H2SCalculator/H2SCalculatorOnline.jsx';
 import RateCalculator from './pages/RateCalculator/RateCalculator.jsx';
 import RateCalculatorOnline from './pages/RateCalculator/RateCalculatorOnline.jsx';
+import Phreeqc from './pages/Phreeqc/Phreeqc.jsx';
+import PhreeqcOnline from './pages/Phreeqc/PhreeqcOnline.jsx';
+import PhreeqcResults from './pages/Phreeqc/PhreeqcResults.jsx';
 
 function App() {
   return (
@@ -41,7 +44,16 @@ function App() {
                 path={route_map.COTWO_CALCULATOR_ONLINE}
                 element={<CO2CalculatorOnline />}
               />
-              <Route path={route_map.PHREEQC} element={<NotFound />} />
+              <Route path={route_map.PHREEQC} element={<Phreeqc />} />
+              <Route
+                path={route_map.PHREEQC_ONLINE}
+                element={<PhreeqcOnline />}
+              />
+              <Route
+                path="/phreeqc/results/:experimentId"
+                element={<PhreeqcResults />}
+              />
+
               <Route path={route_map.SUPCRTBL} element={<NotFound />} />
               <Route path={route_map.RATE_SCRIPTS} element={<RateScripts />} />
               <Route
