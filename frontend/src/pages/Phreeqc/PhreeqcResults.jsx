@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { API_URL } from '../../config';
 import Alert from '../../components/Alert';
 import './PhreeqcOnline.css';
 import { route_map } from '../../constants';
@@ -12,10 +11,19 @@ function PhreeqcResults() {
   const [message, setMessage] = useState('');
   const [results, setResults] = useState('');
   const [error, setError] = useState(null);
-  const [pollingInterval, setPollingInterval] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  const fetchStatus = async () => {
+  // Use refs to track completion state and avoid stale closures in effects
+  const isCompletedRef = useRef(false);
+  const timerRef = useRef(null);
+
+  // Memoized fetchStatus function to prevent recreation on each render
+  const fetchStatus = useCallback(async () => {
+    // Don't fetch if already completed
+    if (isCompletedRef.current) {
+      return;
+    }
+
     try {
       const response = await fetch(`/api/phreeqc/status/${experimentId}`);
       const data = await response.json();
@@ -23,28 +31,40 @@ function PhreeqcResults() {
       setStatus(data.data.status);
       setMessage(data.data.message);
 
-      // If completed, get results and stop polling
+      // If completed, get results once and set completion flag
       if (data.data.status === 'completed') {
-        fetchResults();
-        if (pollingInterval) {
-          clearInterval(pollingInterval);
-          setPollingInterval(null);
+        isCompletedRef.current = true;
+
+        // Stop polling by clearing the timer
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
         }
+
+        // Fetch results once
+        fetchResults();
       } else if (
         data.data.status === 'error' ||
         data.data.status === 'timeout'
       ) {
-        // Stop polling on error or timeout
-        if (pollingInterval) {
-          clearInterval(pollingInterval);
-          setPollingInterval(null);
+        // Also stop polling on error or timeout
+        isCompletedRef.current = true;
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
         }
       }
     } catch (error) {
       console.error('Error fetching status:', error);
       setError('Failed to fetch job status. Please try again later.');
+
+      // Stop polling on error
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     }
-  };
+  }, [experimentId]);
 
   const fetchResults = async () => {
     try {
@@ -59,6 +79,39 @@ function PhreeqcResults() {
       setError('Failed to fetch results. Please try again later.');
     }
   };
+
+  // Effect for initial fetch and polling setup
+  useEffect(() => {
+    // Reset completion state when experimentId changes
+    isCompletedRef.current = false;
+
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Define polling function
+    const pollStatus = () => {
+      fetchStatus().then(() => {
+        // Only set up next poll if not completed
+        if (!isCompletedRef.current) {
+          timerRef.current = setTimeout(pollStatus, 3000);
+        }
+      });
+    };
+
+    // Start polling
+    pollStatus();
+
+    // Cleanup function
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [experimentId, fetchStatus]);
 
   const handleDownload = () => {
     window.open(`/api/phreeqc/download/${experimentId}`, '_blank');
@@ -77,24 +130,6 @@ function PhreeqcResults() {
         console.error('Failed to copy: ' + err);
       });
   };
-
-  useEffect(() => {
-    // Initial fetch
-    fetchStatus();
-
-    // Set up polling every 3 seconds if not already polling
-    if (!pollingInterval) {
-      const interval = setInterval(fetchStatus, 3000);
-      setPollingInterval(interval);
-    }
-
-    // Clean up interval on unmount
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
-    };
-  }, [experimentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderStatusInfo = () => {
     switch (status) {

@@ -164,19 +164,35 @@ def get_results(experiment_id: str):
   if not output_files:
     raise HTTPException(status_code=404, detail="No output files found")
   
-  # Read the output file
+  # Read the output file - for very large files, we'll read just the first 500KB
+  # This prevents memory issues and optimizes network bandwidth
   output_file = output_files[0]  # Assuming there's only one output file
   output_file_path = os.path.join(output_dir, output_file)
   
   try:
+    # Get file size in bytes
+    file_size = os.path.getsize(output_file_path)
+    
+    # For very large files (>500KB), read just the beginning and provide a summary
+    max_size = 500 * 1024  # 500KB
+    
     with open(output_file_path, "r", errors="ignore") as f:
-      results = f.read()
+      if file_size > max_size:
+        results = f.read(max_size)
+        truncated = True
+        # Add an informative message at the end
+        results += f"\n\n[...Output truncated. File is {file_size/1024/1024:.2f} MB. Use the Download button to get the full file.]"
+      else:
+        results = f.read()
+        truncated = False
     
     return {
       "data": {
         "results": results,
         "experiment_id": experiment_id,
-        "status": "completed"
+        "status": "completed",
+        "truncated": truncated,
+        "file_size_bytes": file_size
       }
     }
   except Exception as e:
