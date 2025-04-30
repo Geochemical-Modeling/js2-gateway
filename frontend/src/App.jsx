@@ -21,6 +21,7 @@ import PhreeqcOnline from './pages/Phreeqc/PhreeqcOnline.jsx';
 import PhreeqcResults from './pages/Phreeqc/PhreeqcResults.jsx';
 import Supcrtbl from './pages/Supcrtbl/Supcrtbl.jsx';
 import SupcrtbOnline from './pages/Supcrtbl/SupcrtblOnline.jsx';
+import ScrollToTopOfPage from './ScrollToTopOfPage.jsx';
 
 function App() {
   return (
@@ -28,13 +29,12 @@ function App() {
       <Router>
         <OnboardingCheck />
         <HomeNotificationToast />
+        <ScrollToTopOfPage />
         <Routes>
           <Route element={<Layout />}>
             {/* Public routes accessible to all users */}
             <Route path="/" element={<Home />} />
             <Route path="/onboarding" element={<Onboarding />} />
-
-            
 
             <Route path={route_map.ADMIN_PAGE} element={<AdminPage />} />
 
@@ -49,6 +49,7 @@ function App() {
                 path={route_map.COTWO_CALCULATOR_ONLINE}
                 element={<CO2CalculatorOnline />}
               />
+<<<<<<< Updated upstream
               <Route path={route_map.PHREEQC} element={<Phreeqc />} />
               <Route
                 path={route_map.PHREEQC_ONLINE}
@@ -60,6 +61,10 @@ function App() {
               />
 
               
+=======
+              <Route path={route_map.PHREEQC} element={<NotFound />} />
+
+>>>>>>> Stashed changes
               {/* Outside security checks for now */}
               <Route path={route_map.SUPCRTBL} element={<Supcrtbl />} />
               <Route

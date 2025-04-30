@@ -1,22 +1,174 @@
-import React, { useState, useEffect } from 'react';
-import { headerNameMap, headerValueMap, resetMap } from './constants';
+import React, { useState, useEffect } from "react";
+import { headerNameMap, headerValueMap, resetMap } from "./constants";
 
-const databaseMap = {
-  dpronsbl: 'supcrtbl',
-  dpronsbl_ree: 'supcrtbl_ree',
-};
+import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
+import FileInput from "../../components/FileInput";
 
-/**
- * ### SupcrtbOnline
- * The user input page for the Super-Crit application.
- *
- */
 export default function SupcrtbOnline() {
   const [species, setSpecies] = useState([]);
   const [filteredSpecies, setFilteredSpecies] = useState([]);
-  const [reactionInputs, setReactionInputs] = useState(['']);
-  const [selectedDatabase, setSelectedDatabase] = useState('dpronsbl');
-  const [reactionString, setReactionString] = useState('');
+  const [reactionInputs, setReactionInputs] = useState([""]);
+  const [selectedDatabase, setSelectedDatabase] = useState("dpronsbl");
+  const databaseMap= {
+    dpronsbl: "supcrtbl",
+    dpronsbl_ree: "supcrtbl_ree",
+  };
+
+  const [reactionString, setReactionString] = useState<string>("");
+
+   // Every time reactInputs changes,
+  useEffect(() => {
+    setReactionString(reactionInputs.join("\n"));
+  }, [reactionInputs]);
+
+  useEffect(() => {
+    fetchSpeciesData(databaseMap[selectedDatabase]);
+  }, [databaseMap[selectedDatabase]]);
+
+  const fetchSpeciesData = async (database) => {
+    try {
+      const response = await fetch(
+        `https://js2test.ear180013.projects.jetstream-cloud.org/DB.php?query=Name-${database}`
+      );
+      const data = await response.json();
+      console.log("Fetched species data:", data); // Log the fetched data
+
+      // Flatten the nested arrays into a single array
+      const allSpecies = Object.values(data).flat();
+      console.log("Flattened species data:", allSpecies); // Log the flattened data
+
+      setSpecies(allSpecies);
+      setFilteredSpecies(allSpecies);
+    } catch (error) {
+      console.error("Error fetching species data:", error);
+    }
+  };
+
+  const handleDatabaseChange = (
+    event
+  ) => {
+    setSelectedDatabase(event.target.value);
+  };
+
+  /**
+   * Using the autocomplete users can enter in species, where each line represents a species:
+   * - Numbers: The stoichiometric coefficient of the species. Positive numbers are products and negatives are reactants.
+   * - Space: Space goes in between them.
+   * - Name of the species: Comes after such as 'SIO2,aq or' 'Quartz'
+   * 
+   * E.g. -1 H2O
+   * 
+   * However a reaction consists of multiple lines:
+   * 
+   * -1 H2O # start reaction 1
+   * -1 CO2
+   * 1 H2CO3
+   * \n 
+   * 2 CO2 #start reaction two
+   * 
+   * Then empty lines separate different reaction
+   * 
+   * Our goals:
+   * - when the user types, show filtered suggestions based on the last line
+   * - When the user selects, replace the last line with numeric part + selected species
+   * 
+   * -1 H2O
+   * 1 CO
+   * -1 H
+   * 
+   * Should return: 
+   * 
+   * {
+   *  lines: ['-1 H2O', '1 CO'],
+   *  numericPart: '-1 ',
+   *  speciesPart: 'H'
+   * }
+   * 
+   * The reason we're even talking about the last line is becasue 
+   * our autocomplete is going to target the last line that we are typing. So we'll 
+   * replace the last line when the user selects a given suggestion. After replacing that last line, we'll
+   * update that in the reaction inputs array.
+   */
+  
+  const parseLastLine = (text) => {
+    const lines = text.split("\n")
+    const lastLine = lines.pop() || "" 
+    const numericPart = lastLine.match(/^[\d\s-]*/)?.[0] || "";
+    const speciesPart = lastLine.replace(/^[\d\s-]*/, "").trim();
+    return {lines, numericPart, speciesPart}
+  }
+  
+  const handleInputChange = (
+    index,
+    value
+  ) => {
+    /**
+     * 1. Copy reaction inputs array
+     * 2. Replace the input at index with the new value 
+     * 3. If no species list, clear our filtered results and stop
+     * 4. Get the last line of our value. Apparently this assumes where the user is typing.
+     * 5. Extract the "alpha part" (species name" by removing digits, spaces, and dashes from the beginning.
+     * 6. Update the filteredSpecies list to only include species that include the 
+     * species name of the current species
+     * 
+     * NOTE: When an empty string I think it's going to give us null, so you probably have to manually chnage it back to mepty string instead of null?
+     */
+    const newInputs = [...reactionInputs];
+    newInputs[index] = value;
+    setReactionInputs(newInputs);
+
+    if (!species || species.length === 0) {
+      setFilteredSpecies([]);
+      return;
+    }
+
+    // At a given index split it by new lines? Why? When would a speciies have new lines
+    const { speciesPart } = parseLastLine(value)
+    // If no species name was listed, show all species
+    if (!speciesPart) {
+      setFilteredSpecies(species);
+    } else {
+      // At this point there exists some string, query to find all species that have the "alpha" part as a substring
+      const filtered = species.filter((specie) =>
+        specie.toLowerCase().includes(speciesPart.toLowerCase())
+      );
+
+      // Update the filtered species to include all species we found that matched what they typed as the alpha
+      setFilteredSpecies(filtered);
+    }
+  };
+  
+  const handleSelect = (index, selectedSpecies) => {
+    /**
+     * 1. Creates a new reactionInputs array, a shallow copy, which means the array is new but the elements inside are the same references.
+     * 2. Splits the string at index by new lines. Store those strings as an array.
+     * 3. Gets the last line, default to an empty string. Return the array of strings that were numeric?
+     * 4. Then handle adding the value to only the numeric part of the array?
+     * 5. Update the reaction input array 
+     * 
+     */
+    const newInputs = [...reactionInputs]; 
+    const { lines, numericPart } = parseLastLine(newInputs[index])
+    const completeLine = `${numericPart}${selectedSpecies}`
+    newInputs[index] = [...lines, completeLine].join("\n");
+    setReactionInputs(newInputs);
+  };
+
+  /**
+   * Adds a new empty element in the reactionInputs array, which represents an empty selection
+   */
+  const addNewLine = () => {
+    setReactionInputs([...reactionInputs, ""]);
+  };
+
+  /**
+   * Deletes element at index in the reactionInputs array
+   */
+  const handleRemoveLine = (index) => {
+    const newInputs = reactionInputs.filter((_, i) => i !== index);
+    setReactionInputs(newInputs);
+  };
 
   // Sub-options for "Specify solvent phase region:"
   const [isOnePhaseRegionSelected, setIsOnePhaseRegionSelected] =
@@ -60,88 +212,17 @@ export default function SupcrtbOnline() {
   const [isUnequalIncrementSelected, setIsUnequalIncrementSelected] =
     useState(false);
 
-  const [reactionFileOption, setReactionFileOption] = useState(-1);
+  const [reactionFileOption, setReactionFileOption] = useState<number>(-1);
 
-  // When selectedDatabase changes, fetch new species data.
-  useEffect(() => {
-    fetchSpeciesData(databaseMap[selectedDatabase]);
-  }, [selectedDatabase]);
+  
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [data, setData] = useState({
+    experiment_id:"",
+    data: ""
+  })
 
-  // Every time reactInputs changes,
-  useEffect(() => {
-    setReactionString(reactionInputs.join('\n'));
-  }, [reactionInputs]);
 
-  // Given a database, fetch and update state containing the species
-  const fetchSpeciesData = async (database) => {
-    try {
-      const response = await fetch(
-        `https://js2test.ear180013.projects.jetstream-cloud.org/DB.php?query=Name-${database}`,
-      );
-      const data = await response.json();
-      console.log('Fetched species data:', data); // Log the fetched data
-
-      // Flatten the nested arrays into a single array
-      const allSpecies = Object.values(data).flat();
-      console.log('Flattened species data:', allSpecies); // Log the flattened data
-
-      setSpecies(allSpecies);
-      setFilteredSpecies(allSpecies);
-    } catch (error) {
-      console.error('Error fetching species data:', error);
-    }
-  };
-
-  // Handle state change when different database file is selected
-  const handleDatabaseChange = (event) => {
-    setSelectedDatabase(event.target.value);
-  };
-
-  const handleInputChange = (index, event, value) => {
-    const newInputs = [...reactionInputs];
-    newInputs[index] = value;
-    setReactionInputs(newInputs);
-
-    if (!species || species.length === 0) {
-      setFilteredSpecies([]);
-      return;
-    }
-
-    const lines = value.split('\n');
-    const lastLine = lines[lines.length - 1];
-    const numericPart = lastLine.match(/^[\d\s-]*/)?.[0] || '';
-    const alphaPart = lastLine.replace(/^[\d\s-]*/, '');
-
-    if (alphaPart.trim() === '') {
-      setFilteredSpecies(species);
-      return;
-    }
-
-    const filtered = species.filter((specie) =>
-      specie.toLowerCase().includes(alphaPart.toLowerCase()),
-    );
-
-    setFilteredSpecies(filtered);
-  };
-
-  const handleSelect = (index, val) => {
-    const newInputs = [...reactionInputs];
-    const lines = newInputs[index].split('\n');
-    const lastLine = lines.pop() || '';
-    const numericPart = lastLine.match(/^[\d\s-]*/)?.[0] || '';
-    const newLine = numericPart + val;
-    newInputs[index] = [...lines, newLine].join('\n');
-    setReactionInputs(newInputs);
-  };
-
-  const addNewLine = () => {
-    setReactionInputs([...reactionInputs, '']);
-  };
-
-  const handleRemoveLine = (index) => {
-    const newInputs = reactionInputs.filter((_, i) => i !== index);
-    setReactionInputs(newInputs);
-  };
 
   const resetDependentStates = (currentHeader) => {
     const dependencies = resetMap[currentHeader];
@@ -149,49 +230,49 @@ export default function SupcrtbOnline() {
 
     dependencies.forEach((dependency) => {
       switch (dependency) {
-        case 'isLiquidVaporSaturationCurveSelected':
+        case "isLiquidVaporSaturationCurveSelected":
           setIsLiquidVaporSaturationCurveSelected(false);
           break;
-        case 'isOnePhaseRegionSelected':
+        case "isOnePhaseRegionSelected":
           setIsOnePhaseRegionSelected(false);
           break;
-        case 'isTemperatureDensitySelected':
+        case "isTemperatureDensitySelected":
           setIsTemperatureDensitySelected(false);
           break;
-        case 'isTemperaturePressureSelected':
+        case "isTemperaturePressureSelected":
           setIsTemperaturePressureSelected(false);
           break;
-        case 'isTemperatureSelected':
+        case "isTemperatureSelected":
           setIsTemperatureSelected(false);
           break;
-        case 'isPressureSelected':
+        case "isPressureSelected":
           setIsPressureSelected(false);
           break;
-        case 'isCalculateIsochoricSelected':
+        case "isCalculateIsochoricSelected":
           setIsCalculateIsochoricSelected(false);
           break;
-        case 'isCalculateIsothermalSelected':
+        case "isCalculateIsothermalSelected":
           setIsCalculateIsothermalSelected(false);
           break;
-        case 'isCalculateIsoBaricSelected':
+        case "isCalculateIsoBaricSelected":
           setIsCalculateIsoBaricSelected(false);
           break;
-        case 'isUnivariantCurveYesSelected':
+        case "isUnivariantCurveYesSelected":
           setIsUnivariantCurveYesSelected(false);
           break;
-        case 'isUnivariantCurveNoSelected':
+        case "isUnivariantCurveNoSelected":
           setIsUnivariantCurveNoSelected(false);
           break;
-        case 'isCalculateTSelected':
+        case "isCalculateTSelected":
           setIsCalculateTSelected(false);
           break;
-        case 'isCalculatePSelected':
+        case "isCalculatePSelected":
           setIsCalculatePSelected(false);
           break;
-        case 'isUniformIncrementSelected':
+        case "isUniformIncrementSelected":
           setIsUniformIncrementSelected(false);
           break;
-        case 'isUnequalIncrementSelected':
+        case "isUnequalIncrementSelected":
           setIsUnequalIncrementSelected(false);
           break;
       }
@@ -199,24 +280,24 @@ export default function SupcrtbOnline() {
   };
 
   const handleCheckBoxChange = (option, isSelected) => {
-    const optionStateSetters = {
-      'One-Phase Region': setIsOnePhaseRegionSelected,
-      'Liquid Vapor Saturation Curve': setIsLiquidVaporSaturationCurveSelected,
-      'Temprature (degCel), density(H2O) (g/cc)':
+    const optionStateSetters= {
+      "One-Phase Region": setIsOnePhaseRegionSelected,
+      "Liquid Vapor Saturation Curve": setIsLiquidVaporSaturationCurveSelected,
+      "Temperature (degCel), density(H2O) (g/cc)":
         setIsTemperatureDensitySelected,
-      'Temprature (degCel)': setIsTemperatureSelected,
-      'Pressure (bars)': setIsPressureSelected,
-      'Temprature (degCel), pressure (bars)': setIsTemperaturePressureSelected,
-      'Calculate ISOCHORIC (T) tables': setIsCalculateIsochoricSelected,
-      'Calculate ISOTHERMAL (D) tables': setIsCalculateIsothermalSelected,
-      'Calculate ISOBARIC (P) tables': setIsCalculateIsoBaricSelected,
+      "Temperature (degCel)": setIsTemperatureSelected,
+      "Pressure (bars)": setIsPressureSelected,
+      "Temperature (degCel), pressure (bars)": setIsTemperaturePressureSelected,
+      "Calculate ISOCHORIC (T) tables": setIsCalculateIsochoricSelected,
+      "Calculate ISOTHERMAL (D) tables": setIsCalculateIsothermalSelected,
+      "Calculate ISOBARIC (P) tables": setIsCalculateIsoBaricSelected,
       Yes: setIsUnivariantCurveYesSelected,
       No: setIsUnivariantCurveNoSelected,
-      'Calculate T (logK, isobars)': setIsCalculateTSelected,
-      'Calculate P (logK, isotherms)': setIsCalculatePSelected,
-      'Calculate tables having uniform increments':
+      "Calculate T (logK, isobars)": setIsCalculateTSelected,
+      "Calculate P (logK, isotherms)": setIsCalculatePSelected,
+      "Calculate tables having uniform increments":
         setIsUniformIncrementSelected,
-      'Calculate tables having unequal increments':
+      "Calculate tables having unequal increments":
         setIsUnequalIncrementSelected,
     };
 
@@ -226,40 +307,72 @@ export default function SupcrtbOnline() {
         resetDependentStates(option);
       }
     } else {
-      console.warn('Unhandled option in handleCheckBoxChange:', option);
+      console.warn("Unhandled option in handleCheckBoxChange:", option);
     }
   };
 
-  const formRadioOptions = [
+  const handleSubmit = async (e) => {
+    // Extract the form data object that was gained from the form data object.
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+    
+    try {
+      const url = "/api/supcrtbl"
+      const formData = new FormData(e.target)
+      const response = await fetch(url, {
+        method: "POST",
+        body: formData,
+      })
+      const JSON = await response.json()
+
+      if (!response.ok) {
+        setError(JSON.message)
+        setIsLoading(false)
+        return;
+      }
+
+      setData(JSON.data)      
+    } catch (err) {
+      setError("Network error. Please check your connection and try again later!")
+    }
+
+    setIsLoading(false)
+
+
+  }
+
+
+   const formRadioOptions = [
     {
-      'Specify solvent phase region:': [
+      "Specify solvent phase region:": [
         true,
         {
-          'One-Phase Region': true,
-          'Liquid Vapor Saturation Curve': true,
+          "One-Phase Region": true,
+          "Liquid Vapor Saturation Curve": true,
         },
       ],
     },
     {
-      'Specify independent State Variables:': [
+      "Specify independent State Variables:": [
         isOnePhaseRegionSelected,
         {
-          'Temprature (degCel), density(H2O) (g/cc)': true,
-          'Temprature (degCel), pressure (bars)': true,
+          "Temperature (degCel), density(H2O) (g/cc)": true,
+          "Temperature (degCel), pressure (bars)": true,
         },
       ],
     },
     {
-      'Specify tabulation option(Chronic, Thermal):': [
+      "Specify tabulation option(Chronic, Thermal):": [
         isTemperatureDensitySelected,
         {
-          'Calculate ISOCHORIC (T) tables': true,
-          'Calculate ISOTHERMAL (D) tables': true,
+          "Calculate ISOCHORIC (T) tables": true,
+          "Calculate ISOTHERMAL (D) tables": true,
         },
       ],
     },
     {
-      'Would you like to use the univariant curve option? (i.e., calculate T(logK,P) or P(logK,T):':
+      "Would you like to use the univariant curve option? (i.e., calculate T(logK,P) or P(logK,T):":
         [
           isTemperaturePressureSelected,
           {
@@ -269,108 +382,87 @@ export default function SupcrtbOnline() {
         ],
     },
     {
-      'Specify univariant calculation option:': [
+      "Specify univariant calculation option:": [
         isUnivariantCurveYesSelected,
         {
-          'Calculate T (logK, isobars)': true,
-          'Calculate P (logK, isotherms)': true,
+          "Calculate T (logK, isobars)": true,
+          "Calculate P (logK, isotherms)": true,
         },
       ],
     },
     {
-      'Specify tabulation option(Baric, Thermal):': [
+      "Specify tabulation option(Baric, Thermal):": [
         isUnivariantCurveNoSelected,
         {
-          'Calculate ISOBARIC (P) tables': true,
-          'Calculate ISOTHERMAL (D) tables': true,
+          "Calculate ISOBARIC (P) tables": true,
+          "Calculate ISOTHERMAL (D) tables": true,
         },
       ],
     },
     {
-      'Specify independent liq-vap saturation variable:': [
+      "Specify independent liq-vap saturation variable:": [
         isLiquidVaporSaturationCurveSelected,
         {
-          'Temprature (degCel)': true,
-          'Pressure (bars)': true,
+          "Temperature (degCel)": true,
+          "Pressure (bars)": true,
         },
       ],
     },
     {
-      'Specify table-increment option:': [
+      "Specify table-increment option:": [
         isCalculateIsothermalSelected ||
           isCalculateIsochoricSelected ||
           isCalculateIsoBaricSelected ||
           isTemperatureSelected ||
           isPressureSelected,
         {
-          'Calculate tables having uniform increments': true,
-          'Calculate tables having unequal increments': true,
+          "Calculate tables having uniform increments": true,
+          "Calculate tables having unequal increments": true,
         },
       ],
     },
   ];
 
   return (
-    <main
-      id="main-content"
-      className="rvt-layout__wrapper rvt-layout__wrapper--single rvt-container-sm"
-    >
+    <main id="main-content" className="rvt-layout__wrapper rvt-layout__wrapper--single rvt-container-sm">
       <div className="rvt-layout__content">
-        {/* Header with title and citation card for using the software */}
         <header>
-          <h2 className="rvt-ts-md">SUPCRTBL ONLINE VERSION 3.0.0</h2>
-          <hr />
-
-          <div className="rvt-container-lg [ rvt-m-top-sm ]">
-            <div className="rvt-row justify-content-center">
-              <div className="rvt-cols-8">
-                <div
-                  className="rvt-card"
-                  style={{ borderColor: '#ced4da', backgroundColor: '#ffffff' }}
+        <h2 className="rvt-ts-md">SUPCRTBL ONLINE VERSION 3.0.0</h2>
+        <hr />
+        <div className="rvt-card rvt-card--raised">
+          <div className="rvt-card__body">
+            <h2>
+              Acknowledgement and Citation
+            </h2>
+            <h3 style={{ fontStyle: 'italic', color: '#6c757d' }}>
+              Users please cite this
+            </h3>
+            <div className="rvt-card__content [ rvt-flow ]">
+              <p>
+                Zimmer, K., Zhang, Y.L., Lu, P., Chen, Y.Y., Zhang,
+                G.R., Dalkilic, M., and Zhu, C. (2016) SUPCRTBL: A
+                revised and extended thermodynamic dataset and software
+                package of SUPCRT92.
+                <i> Computer and Geosciences</i> 90:97-111.{' '}
+                <a
+                  href="https://doi.org/10.1016/j.cageo.2016.02.013"
+                  className="rvt-color-crimson-700"
                 >
-                  <div className="rvt-card__body">
-                    <h2
-                      className="rvt-card__title"
-                      style={{ fontWeight: 'bold', color: '#343a40' }}
-                    >
-                      Acknowledgment and Citation
-                    </h2>
-                    <div className="rvt-card__content [ rvt-flow ]">
-                      <p style={{ fontStyle: 'italic', color: '#6c757d' }}>
-                        User please cite:
-                      </p>
-                      <p
-                        style={{
-                          fontFamily: 'Times New Roman',
-                          color: 'purple',
-                        }}
-                      >
-                        Zimmer, K., Zhang, Y.L., Lu, P., Chen, Y.Y., Zhang,
-                        G.R., Dalkilic, M., and Zhu, C. (2016) SUPCRTBL: A
-                        revised and extended thermodynamic dataset and software
-                        package of SUPCRT92.
-                        <i> Computer and Geosciences</i> 90:97-111.{' '}
-                        <a
-                          href="https://doi.org/10.1016/j.cageo.2016.02.013"
-                          style={{ color: 'crimson' }}
-                        >
-                          <b>DOI</b>
-                        </a>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  <b>DOI</b>
+                </a>
+              </p>
             </div>
           </div>
+        </div>
         </header>
 
-        {/* Input form for the calculator */}
-        <form
-          action="https://js2test.ear180013.projects.jetstream-cloud.org/supcrtbl/supcrtbl3.php"
+        <br />
+        <form 
+          onSubmit={handleSubmit}
           method="post"
           encType="multipart/form-data"
         >
+          {/* Output File and database selection */}
           <div className="rvt-m-bottom-sm">
             <label htmlFor="outputFile" className="rvt-label">
               Output File Name:
@@ -383,67 +475,61 @@ export default function SupcrtbOnline() {
               className="rvt-text-input"
             />
           </div>
-
           <div className="rvt-m-bottom-sm">
             <label htmlFor="slopFile" className="rvt-label">
               Database File:
             </label>
             <select
+              className="rvt-select"
               name="slopFile"
               id="slopFile"
               value={selectedDatabase}
+
+              // Just updates the state, and then the effect manages fetching the new data
               onChange={handleDatabaseChange}
             >
               <option value="dpronsbl">supcrtbl.dat</option>
               <option value="dpronsbl_ree">supcrtbl_REE.dat</option>
             </select>
           </div>
-
-          {/* Render radio option groups */}
+          
           {formRadioOptions?.map((element, index) => {
             const header = Object.keys(element)[0];
             const [currentStateValue, optionsMap] = Object.values(element)[0];
+            
+            // NOTE: Changing this would break the rendering.
             let shouldDisplay = false;
             if (currentStateValue) {
               shouldDisplay = true;
             }
-            if (!shouldDisplay) {
-              return <></>;
-            }
+
             return (
-              <fieldset className="rvt-fieldset" key={index}>
+              shouldDisplay ? (<fieldset className="rvt-fieldset rvt-m-top-xs rvt-m-bottom-xs" key={index}>
                 <legend className="rvt-text-bold">{header}</legend>
                 <ul className="rvt-list-plain">
                   {Object.entries(optionsMap)?.map(
                     ([optionLabel, _], optionIndex) => (
-                      <li key={optionIndex}>
+                      <li>
                         <div className="rvt-radio">
-                          <input
-                            required
-                            type="radio"
-                            name={headerNameMap[header]}
-                            id={headerNameMap[header]}
+                          <input 
+                            type="radio" 
+                            name={headerNameMap[header]} 
+                            id={`${header}-${optionIndex}`} 
                             value={headerValueMap[optionLabel]}
                             onClick={() => {
                               handleCheckBoxChange(optionLabel, true);
                             }}
-                          />
-                          <label
-                            htmlFor={headerNameMap[header]}
-                            className="rvt-label"
-                          >
-                            {optionLabel}
-                          </label>
+                            required/>
+                          <label htmlFor={`${header}-${optionIndex}`}>{optionLabel}</label>
                         </div>
                       </li>
-                    ),
+                    )
                   )}
                 </ul>
-              </fieldset>
-            );
+              </fieldset>) : (<></>)
+            )
           })}
 
-          {/* Render Text Inputs that are heavily conditional */}
           {isLiquidVaporSaturationCurveSelected && (
             <>
               {isPressureSelected && (
@@ -528,7 +614,6 @@ export default function SupcrtbOnline() {
                       className="rvt-text-input"
                     />
                   </div>
-
                   <div className="rvt-m-top-xs rvt-m-bottom-xs">
                     <label className="rvt-label" htmlFor="tempRange">
                       TEMP Range (degCel): min, max, increment
@@ -737,7 +822,7 @@ export default function SupcrtbOnline() {
                             />
                           </div>
                         </div>
-                      )}{' '}
+                      )}{" "}
                       {isUnequalIncrementSelected && (
                         <div>
                           <label className="rvt-label" htmlFor="presTempPairs">
@@ -791,16 +876,16 @@ export default function SupcrtbOnline() {
                       )}
                       {isUnequalIncrementSelected && (
                         <div>
-                          <label className="rvt-label" htmlFor="tempPresPairs">
-                            Specify TEMP (degCel), Pres(g/cc) value pairs:
-                            <br />
-                            One pair per line, ending with 0,0
-                          </label>
-                          <textarea
-                            name="tempPresPairs"
-                            id="tempPresPairs"
-                            className="rvt-textarea"
-                          />
+                            <label className="rvt-label" htmlFor="tempPresPairs">
+                              Specify TEMP (degCel), Pres(g/cc) value pairs:
+                              <br />
+                              One pair per line, ending with 0,0
+                            </label>
+                            <textarea
+                              name="tempPresPairs"
+                              id="tempPresPairs"
+                              className="rvt-textarea"
+                            />
                         </div>
                       )}
                     </>
@@ -810,93 +895,81 @@ export default function SupcrtbOnline() {
             </>
           )}
 
-          <div className="mt-3">
-            <label>Specify reaction file:</label>
-            <Form.Check
-              name="reactionOption"
-              id="reactionOption"
-              label="Use an existing reaction file"
-              value="0"
-              onChange={(e) => setReactionFileOption(0)}
-              type="radio"
-            ></Form.Check>
-            <Form.Check
-              name="reactionOption"
-              id="reactionOption"
-              label="Build a new reaction file"
-              value="1"
-              onChange={(e) => setReactionFileOption(1)}
-              type="radio"
-            ></Form.Check>
-          </div>
+          <fieldset className="rvt-fieldset rvt-m-top-sm">
+            <legend className="rvt-text-bold">Specify reaction file</legend>
+            <ul className="rvt-list-plain">
+              <li>
+                <div className="rvt-radio">
+                  <input type="radio" name="reactionOption" id="reactionOption-1" value="0" checked={reactionFileOption == 0} onChange={() => setReactionFileOption(0)}/>
+                  <label for="reactionOption-1">Use an existing reaction file</label>
+                </div>
+              </li>
+              <li>
+                <div className="rvt-radio">
+                  <input type="radio" name="reactionOption" id="reactionOption-2" value="1" checked={reactionFileOption == 1} onChange={() => setReactionFileOption(1)}/>
+                  <label for="reactionOption-2">Build a new reaction file</label>
+                </div>
+              </li>
+            </ul>
+          </fieldset>
 
           {reactionFileOption === 0 ? (
-            <div>
-              <label className="text-bold">Reaction File:</label>
-              <Form.Control
-                name="reactFile"
-                type="file"
-                accept=".dat"
-              ></Form.Control>
-            </div>
+            <FileInput name="reactFile" id="reactFile" accept=".dat" />
           ) : reactionFileOption === 1 ? (
             <div>
-              <label>
+              <label className="rvt-label">
                 Insert reactions here, 1 species per line, empty line between
                 reactions
-                <br /> Numbers are the stoichiometric coefficient of the
-                species.
+                <br /> Numbers are the stoichiometric coefficient of the species.
                 <br /> Positive numbers are products and negative numbers are
                 reactants,
                 <br />
-                e.g. QUARTZ {'=>'} SiO2,aq:
+                e.g. QUARTZ {"=>"} SiO2,aq:
                 <br />
                 <code>
                   -1 QUARTZ
                   <br />1 SiO2,aq
                 </code>
               </label>
+
               {reactionInputs.map((input, index) => (
                 <div
                   key={index}
-                  style={{ display: 'flex', alignItems: 'center' }}
+                  className="rvt-m-top-xs rvt-flex rvt-items-center"
                 >
+                  {/* Render an autcomplete that has the value "input" selected */}
                   <Autocomplete
-                    getItemValue={(item) => item}
-                    items={filteredSpecies || []}
-                    renderItem={(item, isHighlighted) => (
-                      <div
-                        key={item}
-                        style={{
-                          background: isHighlighted ? 'lightgray' : 'white',
-                        }}
-                      >
-                        {item}
-                      </div>
-                    )}
+                    disablePortal
+                    freeSolo // Basically means you can type in anything, and this is needed
+                    options={filteredSpecies || []}
+                    sx={{width: 300}}
+                    renderInput={(params) => <TextField {...params} placeholder="Enter reaction"/>}
                     value={input}
-                    onChange={(e) =>
-                      handleInputChange(index, e, e.target.value)
-                    }
-                    onSelect={(val) => handleSelect(index, val)}
-                    inputProps={{
-                      name: `reaction${index}`,
-                      style: { width: '300px', marginBottom: '10px' },
+                    onInputChange={(e, newValue) => {
+                      handleInputChange(index, newValue)
                     }}
+                    onChange={(e, selectedValue) => {
+
+                      // If you clear things, it could become null so update that to an empty string
+                      if (selectedValue == null) {
+                        selectedValue = ""
+                      }
+
+                      handleSelect(index, selectedValue)
+                    }}                    
                   />
-                  <Button
-                    variant="danger"
-                    onClick={() => handleRemoveLine(index)}
-                    style={{ marginLeft: '10px' }}
-                  >
+
+                  <button
+                    className="rvt-button rvt-button--danger rvt-m-left-xs"
+                    onClick={() => handleRemoveLine(index)}>
                     Remove
-                  </Button>
+                  </button>
                 </div>
               ))}
-              <Button variant="secondary" onClick={addNewLine}>
+              <button className="rvt-button rvt-m-top-sm" onClick={addNewLine}>
                 Add New Line
-              </Button>
-              <Form.Control
+              </button>
+              <input
                 type="hidden"
                 name="reaction"
                 value={reactionString}
@@ -905,29 +978,29 @@ export default function SupcrtbOnline() {
           ) : (
             <></>
           )}
-          <div className="mt-3">
-            <label> Specify option for x-y plot files:</label>
-            <Form.Check
-              name="kalFormatOption"
-              id="Do not generate plot files"
-              label="Do not generate plot files"
-              value="0"
-              required
-              type="radio"
-            />
-            <Form.Check
-              name="kalFormatOption"
-              id="Generate plot files in generic format"
-              label="Generate plot files in generic format"
-              value="1"
-              required
-              type="radio"
-            />
-          </div>
-          <Button className="mt-3" type="submit">
+
+          <fieldset className="rvt-fieldset rvt-m-top-sm">
+            <legend className="rvt-text-bold">Specify option for x-y plot files</legend>
+            <ul className="rvt-list-plain">
+              <li>
+                <div className="rvt-radio">
+                  <input type="radio" name="kalFormatOption" id="kalFormatOption-1" value="0"/>
+                  <label htmlFor="kalFormatOption-1">Do not generate plot files</label>
+                </div>
+              </li>
+              <li>
+                <div className="rvt-radio">
+                  <input type="radio" name="kalFormatOption" id="kalFormatOption-2" value="1"/>
+                  <label htmlFor="kalFormatOption-2">Generic plot files in generic format</label>
+                </div>
+              </li>
+            </ul>
+          </fieldset>
+          
+          <button className="rvt-button rvt-m-top-sm" type="submit" disabled={isLoading}>
             SUBMIT
-          </Button>
-        </form>
+          </button>
+        </form >
       </div>
     </main>
   );

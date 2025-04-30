@@ -4,7 +4,9 @@
 
 // Check if running in development mode based on URL or localStorage
 // This can be toggled without rebuilding the application
-const isDevelopmentHost = window.location.hostname === '127.0.0.1' || window.location.hostname === "localhost";
+const isDevelopmentHost =
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname === 'localhost';
 
 // Check for a localStorage flag that can be toggled in the browser console
 const devModeManuallyEnabled = localStorage.getItem('devMode') === 'true';
