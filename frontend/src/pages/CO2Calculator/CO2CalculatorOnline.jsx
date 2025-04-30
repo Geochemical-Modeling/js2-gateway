@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import CO2Citation from './CO2Citation';
-import CO2Results from './CO2Results';
-
+import Alert from '../../components/Alert';
 const calculatorInputs = [
   {
     label: 'Please enter a temperature (K) between 273-533:',
@@ -181,30 +179,11 @@ export default function CO2CalculatorOnline() {
         {/* Input Form  */}
         <form onSubmit={handleSubmit}>
           {error && (
-            <div
-              class="rvt-alert rvt-alert--danger [ rvt-m-top-md ]"
-              role="alert"
-              aria-labelledby="error-alert-title"
-              data-rvt-alert="error"
-            >
-              <div class="rvt-alert__title" id="error-alert-title">
-                Error when working with CO2 Calculator
-              </div>
-              <p class="rvt-alert__message">{error}</p>
-              <button class="rvt-alert__dismiss" data-rvt-alert-close>
-                <span class="rvt-sr-only">Dismiss this alert</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                >
-                  {' '}
-                  <path d="m3.5 2.086 4.5 4.5 4.5-4.5L13.914 3.5 9.414 8l4.5 4.5-1.414 1.414-4.5-4.5-4.5 4.5L2.086 12.5l4.5-4.5-4.5-4.5L3.5 2.086Z" />
-                </svg>
-              </button>
-            </div>
+            <Alert
+              title="Error when working with CO2 Calculator"
+              subtitle={error}
+              type="error"
+            />
           )}
           {calculatorInputs.map((input) => (
             <div>
