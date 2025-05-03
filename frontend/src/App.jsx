@@ -21,7 +21,8 @@ import PhreeqcOnline from './pages/Phreeqc/PhreeqcOnline.jsx';
 import PhreeqcResults from './pages/Phreeqc/PhreeqcResults.jsx';
 import Supcrtbl from './pages/Supcrtbl/Supcrtbl.jsx';
 import SupcrtbOnline from './pages/Supcrtbl/SupcrtblOnline.jsx';
-import ScrollToTopOfPage from './ScrollToTopOfPage.jsx';
+import SupcrtblResults from './pages/Supcrtbl/SupcrtblResults.jsx';
+import ScrollToTopOfPage from './components/ScrollToTopOfPage.jsx';
 
 function App() {
   return (
@@ -49,7 +50,6 @@ function App() {
                 path={route_map.COTWO_CALCULATOR_ONLINE}
                 element={<CO2CalculatorOnline />}
               />
-<<<<<<< Updated upstream
               <Route path={route_map.PHREEQC} element={<Phreeqc />} />
               <Route
                 path={route_map.PHREEQC_ONLINE}
@@ -60,16 +60,15 @@ function App() {
                 element={<PhreeqcResults />}
               />
 
-              
-=======
-              <Route path={route_map.PHREEQC} element={<NotFound />} />
-
->>>>>>> Stashed changes
-              {/* Outside security checks for now */}
               <Route path={route_map.SUPCRTBL} element={<Supcrtbl />} />
               <Route
                 path={route_map.SUPCRTBL_ONLINE}
                 element={<SupcrtbOnline />}
+              />
+              {/*  */}
+              <Route
+                path="/supcrtbl/results/:experimentId"
+                element={<SupcrtblResults />}
               />
 
               <Route path={route_map.RATE_SCRIPTS} element={<RateScripts />} />
