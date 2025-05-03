@@ -1,13 +1,10 @@
 from app.routes import auth, user
 from app.routes.co2 import co2_calc
 from app.routes.rate import rate_calc
-<<<<<<< Updated upstream
 from app.routes.phreeqc import phreeqc_calc
-=======
 from app.routes.supcrtbl import supcrtbl_calc
 
->>>>>>> Stashed changes
-
+from fastapi.exceptions import RequestValidationError
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 
@@ -29,6 +26,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Custom handler for validation errors
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # Extract detailed validation errors; Really good for api debugging.
+    errors = exc.errors()
+    detailed_errors = [
+        {
+            "loc": error["loc"],  # Location of the error (e.g., body, query, path)
+            "msg": error["msg"],  # Error message
+            "type": error["type"],  # Type of validation error
+        }
+        for error in errors
+    ]
+    # Create a consistent error response
+    err_content = {
+        "status_code": 422,
+        "message": "Validation error",
+        "errors": detailed_errors,
+    }
+    return JSONResponse(
+        status_code=422,
+        content=err_content,
+    )
+
 # The motivation is to catch all HTTPExceptions and return a consistent JSON response.
 # NOTE: If changed, please reflect those changes on frontend as well. It's simple just go to the fetch
 # functions for each calc.
@@ -40,13 +61,9 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         content=err_content,
     )
 
-<<<<<<< Updated upstream
 app.include_router(phreeqc_calc.router, tags=["phreeqc"])
-app.include_router(co2_calc.router, tags=["co2"])
-=======
-app.include_router(supcrtbl_calc.router, tags=["CO2"])
+app.include_router(supcrtbl_calc.router, tags=["Supcrtbl"])
 app.include_router(co2_calc.router, tags=["CO2"])
->>>>>>> Stashed changes
 app.include_router(auth.router, tags=["auth"])
 app.include_router(user.router, tags=["user"])
 app.include_router(rate_calc.router, tags=["Rate"])

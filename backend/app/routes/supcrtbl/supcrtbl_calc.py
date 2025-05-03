@@ -1,32 +1,36 @@
-import subprocess
-from fastapi import APIRouter, HTTPException, Form, UploadFile, Request, File
+import asyncio
+from fastapi import APIRouter, HTTPException, Form, UploadFile, File, WebSocket
+from fastapi.responses import FileResponse
+from datetime import datetime
+import os, shutil
+from typing import Union, Annotated, Optional
 from datetime import datetime
 import os
-from typing import Optional, Union
-from datetime import datetime
-from zipfile import ZipFile
-import os
-import glob
-import re
+from app.types import SupcrtblFormData
+from app.routes.phreeqc.phreeqc_calc import sanitize_filename
+from . import supcrtbl_process
 
-router = APIRouter()
+
+'''
+  - dpronsbl is supcrtbl.dat 
+  - dpronsbl_all is supcrtbl_ree.dat 
+  TODO: Make sure these are the actual data files used, or ask Ranvir about the situation with these data files if he knows.
+  '''
 dataFileChoices = [
-  "dpronsbl", # aka supcrtbl.dat
-  "dpronsbl_ree" # aka supcrtbl_REE.dat, careful with casing, make sure the things are lowercased.
+  "dpronsbl.dat", 
+  "dpronsbl_all.dat" 
 ]
 
 router = APIRouter()
 
 @router.post("/api/supcrtbl")
 async def calculate_supcrtbl(
-  request: Request,
   outputFile: str = Form(...),
   slopFile: str = Form(...),
   kalFormatOption: int = Form(...),
   reactionOption: int = Form(...),
-  reactFile: Union[UploadFile, None] = File(None),
-  reaction: Optional[str] = Form(None),
   solventPhase: int = Form(...),
+  reaction: Optional[str] = Form(None),
   independentStateVar: Optional[int] = Form(None),
   univariantCurveOption: Optional[int] = Form(None),
   univariantCalcOption: Optional[int] = Form(None),
@@ -48,155 +52,194 @@ async def calculate_supcrtbl(
   isobarsRange: Optional[str] = Form(None),
   tableIncrement: Optional[int] = Form(None),
   tabulationBaricOption: Optional[int] = Form(None),
-  tabulationChoricOption: Optional[int] = Form(None)
+  tabulationChoricOption: Optional[int] = Form(None),
+  reactFile: Union[UploadFile, None] = File(None)  # Handle file separately
 ):
-  # 1. Create experiment directory
-  timestamp = datetime.now()
-  cwd = os.path.join(os.path.dirname(__file__), f"nextTDB_workdirs/{timestamp}")
-  outputFile = outputFile # TODO: Putting this here as a reminder to sanitize this
+  
+  # NOTE: First, we can't have a pydantic model that has UploadFile. Two if 
+  # we do a pydantic model reactFile (2 parameters), our API now expects a big object and then a file.
+  # You'd also have to tinker around with making those optional fields actually optional in that situation.
+  # So for right now, accepting many parameters, then compacting them, seems like an alright idea.
+  
+  # Compact the form data to make it easier to use
+  formData = SupcrtblFormData(
+    outputFile=outputFile,
+    slopFile=slopFile,
+    kalFormatOption=kalFormatOption,
+    reactionOption=reactionOption,
+    solventPhase=solventPhase,
+    reaction=reaction,
+    independentStateVar=independentStateVar,
+    univariantCurveOption=univariantCurveOption,
+    univariantCalcOption=univariantCalcOption,
+    logKRange=logKRange,
+    logKBoundingTempRange=logKBoundingTempRange,
+    logKBoundingPresRange=logKBoundingPresRange,
+    lipVapSatVar=lipVapSatVar,
+    lipVapSatPresVal=lipVapSatPresVal,
+    lipVapSatTempVal=lipVapSatTempVal,
+    presRange=presRange,
+    tempRange=tempRange,
+    presTempPairs=presTempPairs,
+    tempPresPairs=tempPresPairs,
+    dH2OTempPairs=dH2OTempPairs,
+    dH2ORange=dH2ORange,
+    tempDH2OPairs=tempDH2OPairs,
+    isothermsRange=isothermsRange,
+    isochoresRange=isochoresRange,
+    isobarsRange=isobarsRange,
+    tableIncrement=tableIncrement,
+    tabulationBaricOption=tabulationBaricOption,
+    tabulationChoricOption=tabulationChoricOption,
+    reactFile=reactFile,
+  )
 
-  try: 
-    binary_path = os.path.join(os.path.dirname(__file__), "resources", "supcrtbl")
-    process = subprocess.Popen(
-      [binary_path],
-      stdin=subprocess.PIPE,
-      stdout=subprocess.PIPE,
-      stderr=subprocess.PIPE,
-      cwd=cwd, # Run the binary in this CWD; as a result it will output files in here
-      text=True
-    )
-    process.stdin.write("n\n")
-    process.stdin.write(f"bin/{slopFile}\n")
-    process.stdin.write("3\n")
-    process.stdin.write(f"{solventPhase+1}\n")
+
+  # 1. Create experiment directory alongside its input and output directory
+  # exp_id = datetime.now()
+  exp_id = "test"
+  experimentDir = os.path.join(os.path.dirname(__file__), "nextTDB_workdirs", f"{exp_id}")
+  binDir = os.path.join(experimentDir, "bin")
+  outputDir = os.path.join(experimentDir, "output")
+  os.makedirs(experimentDir, exist_ok=True)
+  os.makedirs(binDir, exist_ok=True)
+  os.makedirs(outputDir, exist_ok=True)
+  
+  # 2. Sanitize string data like the file names
+  # If they submitted a reactFile (reaction file), then attempt to save to the input directory
+  # NOTE: Can always move this into the supcrtbl_process.py
+  formData.outputFile = sanitize_filename(formData.outputFile)
+  if formData.reactionOption == 0:
+    try:
+      reactFile.filename = sanitize_filename(reactFile.filename)     
+      with open(os.path.join(reactFile.filename), "w") as f:
+        file_contents = (await reactFile.read()).decode("utf-8")
+        f.write(file_contents)
+    except Exception as e: 
+      raise HTTPException(status_code=400, detail=f"Reaction file '{reactFile.filename}' couldn't be processed. Please check it and try again!")
     
-    if solventPhase == 0:
-      process.stdin.write(f"{independentStateVar+1}\n")
-      if independentStateVar == 0:
-        process.stdin.write(f"{tabulationChoricOption+1}\n")
-        if tabulationChoricOption == 0:
-          process.stdin.write(f"{tableIncrement+1}\n")
-          if tableIncrement == 0:
-            process.stdin.write(f"{isochoresRange}\n")
-            process.stdin.write(f"{tempRange}\n")
-          elif tableIncrement == 1:
-            process.stdin.write(f"{dH2OTempPairs}\n")
-        elif tabulationChoricOption == 1:
-          process.stdin.write(f"{tableIncrement+1}\n")
-          if tableIncrement == 0:
-            process.stdin.write(f"{isothermsRange}\n")
-            process.stdin.write(f"{dH2ORange}\n")
-          elif tableIncrement == 1:
-            process.stdin.write(f"{tempDH2OPairs}\n")
-      elif independentStateVar == 1:
-        if univariantCurveOption == 0:
-          process.stdin.write("y\n")
-          process.stdin.write(f"{univariantCalcOption+1}\n")
-          if univariantCalcOption == 0:
-            process.stdin.write(f"{isobarsRange}\n")
-            process.stdin.write(f"{logKRange}\n")
-            process.stdin.write(f"{logKBoundingTempRange}\n")
-          elif univariantCalcOption == 1:
-            process.stdin.write(f"{isothermsRange}\n")
-            process.stdin.write(f"{logKRange}\n")
-            process.stdin.write(f"{logKBoundingPresRange}\n")
-        elif univariantCurveOption == 1:
-          process.stdin.write("n\n")
-          process.stdin.write(f"{tabulationBaricOption+1}\n")
-          process.stdin.write(f"{tableIncrement+1}\n")
-          if tabulationBaricOption == 0:
-            if tableIncrement == 0:
-              process.stdin.write(f"{isobarsRange}\n")
-              process.stdin.write(f"{tempRange}\n")
-            elif tableIncrement == 1:
-              process.stdin.write(f"{presTempPairs}\n")
-          elif tabulationBaricOption == 1:
-            if tableIncrement == 0:
-              process.stdin.write(f"{isothermsRange}\n")
-              process.stdin.write(f"{presRange}\n")
-            elif tableIncrement == 1:
-              process.stdin.write(f"{tempPresPairs}\n")
-    elif solventPhase == 1:
-      process.stdin.write(f"{lipVapSatVar+1}\n") 
-      process.stdin.write(f"{tableIncrement+1}\n")
-      if lipVapSatVar == 0:
-        if tableIncrement == 0:
-          process.stdin.write(f"{tempRange}\n")
-        elif tableIncrement == 1:
-          process.stdin.write(f"{lipVapSatTempVal}\n")
-      elif lipVapSatVar == 1:
-        if tableIncrement == 0:
-          process.stdin.write(f"{presRange}\n")
-        elif tableIncrement == 1:
-          process.stdin.write(f"{lipVapSatPresVal}\n")
-
-    # Flush the pipe here at this specific moemnt; sends the data from the pipe/buffer to the binary;
-    process.stdin.flush()
-    process.stdin.write("y\n")
-    process.stdin.write(f"{outputFile}.con\n") # Binary uses this to output a .con file
-    if reactionOption == 0:
-      # Save the reaction file to the unique experiment's directory. 
-      # Then we'll pass in that reaction file's name to the binary. Now this will resolve correctly becasue 
-      # the binary is being run in the unique experiment's directory. If it wasn't clear already, the binary generates files in the directory it runs in
-      # so we'll make it run in the experiments directory to let it output files there.
-      try:
-        reactFileName = reactFile.filename # TODO: Sanitize to prevent directory traversal, likely create a utils or something 
-        with open(os.path.join(cwd, reactFileName), "w") as f:
-          file_contents = await reactFile.read().decode("utf-8")
-          f.write(file_contents)
-        process.stdin.write("1\n")
-        process.stdin.write(f"{reactFileName}\n")
-      except Exception as e:
-        raise HTTPException(status_code=400, detail="Please check your reaction input file and try again")
-    else:
-      reaction_list = re.split("\n\s*\n",  reaction)
-      process.stdin.write("2\n")
-      process.stdin.write(f"{len(reaction_list)}\n")
-      reaction_count = 1
-      for reaction in reaction_list:
-        process.stdin.write(f"Reaction {reaction_count}\n")
-        process.stdin.write(f"{reaction}\n")
-        process.stdin.write("0\n")
-        process.stdin.write("y\n")
-        reaction_count += 1
-      process.stdin.write('y\n')
-      process.stdin.write(f"{outputFile}.rxn\n")
-      
-    process.stdin.write(f"{outputFile}.out\n")   # Binary also uses this to create an output file
-    process.stdin.write(f"{kalFormatOption+1}\n")
-    process.stdin.write(f"{outputFile}\n")
-    process.stdin.close() # Close pipe, which sends all remaining data from pipe into the binary
+  # Make sure they submitted a valid slopFile; also make sure the slopFile exists, if it doesn't, it's our fault
+  if formData.slopFile not in dataFileChoices:
+    error_message = f"Data file named '{formData.slopFile}' is not supported! Please choose one of: {str(dataFileChoices)}"
+    raise HTTPException(status_code=400, detail=error_message)
+  slopFilePath = os.path.join(os.path.dirname(__file__), "resources", formData.slopFile)
+  if not os.path.exists(slopFilePath):
+    raise HTTPException(status_code=500, detail=f"Data file: '{formData.slopFile}' wasn't found in our records.")
+  
+  # Copy our slopFile into our bin directory
+  shutil.copyfile(slopFilePath, os.path.join(binDir, formData.slopFile))
+  
+  try:
+    # 3. Start supercrtbl job asynchronously
+    # Return the experiment id and the status of the experiment
+    supcrtbl_process.start_supcrtbl_job(exp_id, experimentDir, formData, reactFile)
+    return {
+      "data": {
+        "experiment_id": exp_id,
+        "status": "submitted"
+      }
+    }
+  except e:
+    raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")  
 
 
-    # Create ZIP File; Find all files within the experiment directory 
-    MAX_SIZE = 100 * 1024 * 1024 # 100 MB in bytes
-    file_paths = glob.glob(f"{cwd}/{outputFile}.*")
-    zipFilePath = os.path.join(cwd, f"{outputFile}_{timestamp}.zip")
-    with ZipFile(zipFilePath, "w") as zip_object:
-      for file_path in file_paths:
-        if file_path.lower().endswith(".zip") or os.path.getsize(file_path) > MAX_SIZE:
-          continue
-        zip_object.write(file_path, arcname=os.path.basename(file_path))
-    
+@router.get("/api/supcrtbl/result/{experiment_id}")
+def get_results(experiment_id: str):
+  """Get the name and contents of the result files of the supcrtbl simulation"""
+  
+  # Check if job is completed
+  status = supcrtbl_process.get_job_status(experiment_id)
+  if status["status"] != "completed":
+    return {
+      "data": {
+        "experiment_id": experiment_id,
+        "status": status["status"],
+        "message": "Job is not yet completed"
+      }
+    }
+  
+  # Check if output file for the unique experiment exists 
+  outputDir = os.path.join(os.path.dirname(__file__), "nextTDB_workdirs", experiment_id, "output")
+  if not os.path.exists(outputDir):
+    raise HTTPException(status_code=404, detail="Experiment output directory not found")
 
-    files_data = []
-    for file_path in file_paths:
-      if file_path.endswith(".zip") or file_path.endswith(".xy"):
+  # Get the name and contents for all of the output files that satisfy:
+  try:
+    outputFiles = []
+    MAX_SIZE = 500 * 1024 # 500KB
+    for file_path in os.listdir(outputDir):
+
+      # Skip .zip and .xy files
+      if file_path.lower().endswith(".zip") or file_path.endswith(".xy"):
         continue
-      file_content = "File is too big to show its contents! Download the file instead if you want to view its contents."
-      if os.path.getsize(file_path) < MAX_SIZE:
-        with open(file_path, 'r') as f:
+      
+      # Open the file, and attach the file name and content.
+      # NOTE: For bigger files attach part of the file and indicate that its truncated.
+      file_size = os.path.getsize(file_path)
+      with open(file_path, 'r', errors="ignore") as f:
+        if file_size > MAX_SIZE:
+          file_content = f.read(MAX_SIZE)
+          file_content += f"\n\n[...Output truncated. File is {file_size/1024/1024:.2f} MB. Use the Download button to get the full file.]"
+        else:
           file_content = f.read()
-      files_data.append(
-        {
+        outputFiles.append({
           "filename": os.path.basename(file_path), 
           "content": file_content
-        }
-      )    
-    return {"data": files_data}  
+        })  
+
+    # Return file data, or 404 if not files were found
+    if not outputFiles:
+      raise HTTPException(status_code=404, detail="No output files found")
+    return {
+      "data": outputFiles
+    }
   except Exception as e:
-    raise HTTPException(status_code=500, detail="Server error, something went horribly wrong.")
-  
+    raise HTTPException(status_code=500, detail=f"Error reading output file: {str(e)}")
+
+@router.get("/api/supcrtbl/status/{experiment_id}")
+def check_status(experiment_id: str):
+  status = supcrtbl_process.get_job_status(experiment_id)
+  status["experiment_id"] = experiment_id  
+  return {
+    "data": status
+  }
+
+@router.get("/api/supcrtbl/status")
+def check_all_status():
+  experiments_dir = os.path.join(os.path.dirname(__file__), "nextTDB_workdirs")
+  statuses = []
+  for file_path in os.listdir(experiments_dir):
+    exp_id = os.path.basename(file_path)
+    status = supcrtbl_process.get_job_status(exp_id)
+    status["experiment_id"] = exp_id
+    statuses.append(status)
+  return statuses
+
+
+
+# Use this for easy logs
+@router.get("/api/supcrtbl/logs/{experiment_id}")
+def get_logs(experiment_id: str):
+  logContents = supcrtbl_process.get_job_log(experiment_id)
+  if not logContents:
+    raise HTTPException(status_code=404, detail="Logs for experiment not found!")
+  return {"logs": logContents}
+    
+
 @router.get("/api/supcrtbl/download/{experiment_id}")
 def download_files(experiment_id: str):  
-  return {"data": "Yeah download supcrtbl worked"}
+
+  # Get the experiment directory; get the output directory; get the zip file if it exists
+  outputDir = os.path.join(os.path.dirname(__file__), "nextTDB_workdirs", experiment_id, "output")
+  if not os.path.exists(outputDir):
+    raise HTTPException(status_code=404, detail="Experiment output directory not found")
+  
+  # Get the zip file
+  zip_files = [f for f in os.listdir(outputDir) if f.lower().endswith(".zip")]
+  if not zip_files:
+    raise HTTPException(status_code=404, detail="Experiment files not found!")    
+
+  # Assuming there's only one or you want the first
+  zip_filename = zip_files[0]
+  zip_path = os.path.join(outputDir, zip_filename)
+  return FileResponse(path=zip_path, filename=zip_filename, media_type="application/zip")
