@@ -16,3 +16,17 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "emails>=0.6.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.8",
+]
+
+[tool.ruff]
+include = ["src/**/*.py", "tests/**/*.py"]
+indent-width = 2
+
+[tool.ruff.format]
+quote-style="double"
+indent-style="space"
+line-ending="lf"

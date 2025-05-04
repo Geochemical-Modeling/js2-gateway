@@ -1,327 +1,182 @@
-import os, re, glob
+from fastapi import File, UploadFile, Form, HTTPException, APIRouter, BackgroundTasks
+from fastapi.responses import FileResponse
+from typing import List, Optional, Union, Dict
+import os, time, subprocess, shutil
+from pathlib import Path
 import threading
-import time, json
-from datetime import datetime
-import subprocess
-from app.types import SupcrtblFormData
-from fastapi import UploadFile
-from typing import Union, Dict
 from zipfile import ZipFile
+from .JobLockFile import JobLockFile
+
+# Configuration
+BASE_DIR = Path(__file__).resolve().parent
+UPLOAD_DIR = BASE_DIR / "uploads"
+SUPCRT_FILES = BASE_DIR / "supcrtfiles"
+BINARY_PATH = SUPCRT_FILES / "supcrtbl"
+
+# Name of the log file in each job directory
+LOG_FILE_NAME = "job.log"
+
+# Create necessary directories
+UPLOAD_DIR.mkdir(exist_ok=True)
+SUPCRT_FILES.mkdir(exist_ok=True)
+TIMEOUT_SECONDS = 120
+
+# TODO: Should probably create a clean_up function for deleting all experiment directories after like 2 days?
 
 running_processes: Dict[str, Dict] = {}
 # Example structure
 # "exp_id": {
 #     "process": <subprocess.Popen object>,
 #     "start_time": <timestamp>,
-#     "lock_file": <path to lock file>,
-# }
-# 
 
-# Supcrtbl binary timeout (in seconds); 
-TIMEOUT_SECONDS = 20
-LOG_FILE_NAME = "supcrtbl.log"
-
-
-'''
-We're going to need to figure out what's going wrong when running this subprocess with our inputs. The subprocess is a menu
-program and we'd like to know when it's getting stuck and whatnot. I think I've realized that the best way to do this is 
-to log the steps by step. Meaning that we're going to need to see the input that the main process is sending and the menu
-output that the subprocess is outputting to see how they're interacting with each other. So I think that involves 
-capturing the stdout and stderr. While having real time logs is nice, I think the main idea is that we should keep 
-these logs stored in memory somehow, rather than involving them in the running_processes array which is clear like 
-every 2 minute. So each experiment_id should have an in-memory log string or array. Finally we just need to expose 
-an API that we can use such as "/api/supcrtbl/logs" 
-
-So when we launch the subprocess we want to capture the input, output, and error. We want to store losg in memory so we'll use a separate 
-dictionary since a separate dictionary won't be cleared by cleanup functions. Use asynchronous readings using threads or asyncio to avoid 
-blocking on I/O. We're running multiple subprocesses in the sense that. Like with the approach to output the logs at the end, it makes 
-the logs quite unreadable so it's hard to trace, what's your input vs what is the output of the function. To achieve real time logs, you need to 
-create "threaded reader ", that write to the log in real itme
-'''
-
-
-
-class ExperimentLogger:
-    def __init__(self, path: str):
-        self.log_file = open(path, "a+")  
-        self.lock = threading.Lock()
-
-    def log(self, source, message):
-        with self.lock:
-            self.log_file.write(f"[{source}] {message}\n")
-    
-    def close(self):
-        with self.lock:
-            self.log_file.close()
-    
-    def getLogs(self):
-      # NOTE: The file is opened in append and read mode, but in order to read, we need to set the file seeker 
-      # back to the beginning line of the file.
-      with self.lock:
-        self.log_file.seek(0)
-        return self.log_file.read()
-
-# Custom function to make writing more impact and add logging
-def custom_write_line(process, line, logger: ExperimentLogger):
-    """Write a line to the subprocess and log it in a human-readable format."""
-    if not line.endswith('\n'):
-        line += '\n'
-    logger.log("stdin", f"> {line.strip()}")  # Prefix with '> ' for inputs
-    process.stdin.write(line)
-
-def run_supcrtbl_process(exp_id: str, experiment_dir, lock_file_path: str, form_data: SupcrtblFormData, react_file: UploadFile):
-  '''Creates and run supcrtbl as a subprocess
-  Solution one:
-  - Run the cwd, with respect to the experiment_dir, the root of the experiments folder.
-  - Add the database files in your "/input/" directory now when trying to look, we look for your slopFiles they are in your input directories.
-  - As well as this, when writing paths complex paths like input_dir and output_dir, don't expect for them to work. Instead use "/input/<input-file-path>" and 
-  "/output/<your-output-file-path>
-  '''
-  log_file_path = os.path.join(experiment_dir, LOG_FILE_NAME)
-  logger = ExperimentLogger(log_file_path)
-  process = None
-  try: 
-    update_lock_file(lock_file_path, "running", "Process is running")
-    binary_path = os.path.join(os.path.dirname(__file__), "resources", "supcrtbl")
-    process = subprocess.Popen(
-      [binary_path],
-      stdin=subprocess.PIPE,
-      stdout=subprocess.PIPE,
-      stderr=subprocess.PIPE,
-      cwd=experiment_dir, # Run the binary in the experiment directory
-      text=True,
-    )
-    running_processes[exp_id] = {
-      "process": process,
-      "start_time": time.time(),
-      "lock_file": lock_file_path,
-    }
-    
-    custom_write_line(process, "n", logger)
-    slop_file_path = f"./bin/{form_data.slopFile}"
-    custom_write_line(process, slop_file_path, logger)
-    custom_write_line(process, "3", logger)
-    custom_write_line(process, f"{form_data.solventPhase+1}", logger)
-    if form_data.solventPhase == 0:
-      custom_write_line(process, f"{form_data.independentStateVar+1}", logger)
-      if form_data.independentStateVar == 0:
-        custom_write_line(process, f"{form_data.tabulationChoricOption+1}", logger)
-        if form_data.tabulationChoricOption == 0:
-          custom_write_line(process, f"{form_data.tableIncrement+1}", logger)
-          if form_data.tableIncrement == 0:
-            custom_write_line(process,  f"{form_data.isochoresRange}", logger)
-            custom_write_line(process,  f"{form_data.tempRange}", logger)
-          elif form_data.tableIncrement == 1:
-            custom_write_line(process,  f"{form_data.dH2OTempPairs}", logger)
-        elif form_data.tabulationChoricOption == 1:
-          custom_write_line(process,  f"{form_data.tableIncrement+1}", logger)
-          if form_data.tableIncrement == 0:
-            custom_write_line(process, f"{form_data.isothermsRange}", logger)
-            custom_write_line(process, f"{form_data.dH2ORange}", logger)
-          elif form_data.tableIncrement == 1:
-            custom_write_line(process, f"{form_data.tempDH2OPairs}", logger)
-      elif form_data.independentStateVar == 1:
-        if form_data.univariantCurveOption == 0:
-          custom_write_line(process, "y", logger)
-          custom_write_line(process, f"{form_data.univariantCalcOption+1}", logger)
-          if form_data.univariantCalcOption == 0:
-            custom_write_line(process, f"{form_data.isobarsRange}\n", logger)
-            custom_write_line(process, f"{form_data.logKRange}\n", logger)
-            custom_write_line(process, f"{form_data.logKBoundingTempRange}\n", logger)
-          elif form_data.univariantCalcOption == 1:
-            custom_write_line(process, f"{form_data.isothermsRange}\n", logger)
-            custom_write_line(process, f"{form_data.logKRange}\n", logger)
-            custom_write_line(process, f"{form_data.logKBoundingPresRange}\n", logger)
-        elif form_data.univariantCurveOption == 1:
-          custom_write_line(process, "n\n", logger)
-          custom_write_line(process, f"{form_data.tabulationBaricOption+1}\n", logger)
-          custom_write_line(process, f"{form_data.tableIncrement+1}\n", logger)
-          if form_data.tabulationBaricOption == 0:
-            if form_data.tableIncrement == 0:
-              custom_write_line(process, f"{form_data.isobarsRange}\n", logger)
-              custom_write_line(process, f"{form_data.tempRange}\n", logger)
-            elif form_data.tableIncrement == 1:
-              custom_write_line(process, f"{form_data.presTempPairs}\n", logger)
-          elif form_data.tabulationBaricOption == 1:
-            if form_data.tableIncrement == 0:
-              custom_write_line(process, f"{form_data.isothermsRange}\n", logger)
-              custom_write_line(process, f"{form_data.presRange}\n", logger)
-            elif form_data.tableIncrement == 1:
-              custom_write_line(process, f"{form_data.tempPresPairs}\n", logger)
-    elif form_data.solventPhase == 1:
-      custom_write_line(process, f"{form_data.lipVapSatVar+1}\n", logger)
-      custom_write_line(process, f"{form_data.tableIncrement+1}\n", logger)
-      if form_data.lipVapSatVar == 0:
-        if form_data.tableIncrement == 0:
-          custom_write_line(process, f"{form_data.tempRange}\n", logger)
-        elif form_data.tableIncrement == 1:
-          custom_write_line(process, f"{form_data.lipVapSatTempVal}\n", logger)
-      elif form_data.lipVapSatVar == 1:
-        if form_data.tableIncrement == 0:
-          custom_write_line(process, f"{form_data.presRange}\n", logger)
-        elif form_data.tableIncrement == 1:
-          custom_write_line(process, f"{form_data.lipVapSatPresVal}\n", logger)
-    
-    
-    process.stdin.flush()
-    custom_write_line(process, "y\n", logger)
-
-    # NOTE: The binary will not accept any paths for the output file name. It wil validate it 
-    # saying "invalid specifications". So line 205 is wrong! And probably a lot of other paths are wrong as well.
-    custom_write_line(process, f"{form_data.outputFile}.con\n", logger)
-    if form_data.reactionOption == 0:
-      custom_write_line(process, "1\n", logger)
-      custom_write_line(process, f"{react_file.filename}\n", logger)
-    else:
-      reaction_list = re.split(r"\n\s*\n",  form_data.reaction)
-      custom_write_line(process, "2\n", logger)
-      custom_write_line(process, f"{len(reaction_list)}\n", logger)
-      reaction_count = 1
-      for reaction in reaction_list:
-        custom_write_line(process, f"Reaction {reaction_count}\n", logger)
-        custom_write_line(process, f"{reaction}\n", logger)
-        custom_write_line(process, "0\n", logger)
-
-        # If species is not supported, the computer will say "the following" species weren't found and you need to enter 0 if this happens
-
-
-        # Confirmation that you want the current entry
-        custom_write_line(process, "y\n", logger)
-        reaction_count += 1
-      # Save reactions to a .rxn file
-      custom_write_line(process, 'y\n', logger)
-      custom_write_line(process, f"{form_data.outputFile}.rxn\n", logger)
-      
-    custom_write_line(process, f"{form_data.outputFile}.out\n", logger) # name of tabulated output file 
-    custom_write_line(process, f"{form_data.kalFormatOption+1}\n", logger)
-    custom_write_line(process, f"{form_data.outputFile}\n", logger) # Stores the .xy files 
+def start_supcrtbl_job(job_dir: Path, experiment_id: str, input_data: str, output_file: str):
+  """Schedules supcrtbl job, and creates the initial infrastructure
+  Args:
+      work_dir (Path): Path to the working directory
+      experiment_id (str): ID of the experiment
+      input (str): String containing all the input for the experiment
+      output_file (str): Name of the output file that the user wants
+  """
+  # Start the process in a new thread
+  thread = threading.Thread(
+      target=run_supcrtbl_job,
+      args=(job_dir, experiment_id, input_data, output_file)
+  )
+  thread.daemon = True  # Make thread exit when main process exits
+  thread.start()
   
-    # Sends data to subprocess; if it doesn't end before the timeout then raise a TimeoutError
-    process.wait(TIMEOUT_SECONDS)
+def run_supcrtbl_job(job_dir: Path, experiment_id: str, input_data: str, output_file: str):
+    """Runs the SUPCRTBL binary using the provided inputs. 
 
+    Args:
+        work_dir (Path): Path to the working directory
+        experiment_id (str): ID of the experiment
+        input (str): String containing all the input for the experiment
+        output_file (str): Name of the output file that the user wants
+    """
+    # Create job directory
+    # Create lockfile class for managing the lockfile; lockfile should be created in the working directory
+    job_dir.mkdir(parents=True, exist_ok=True)
+    job_lock_file = JobLockFile(experiment_id, job_dir)
+    job_lock_file.update_lock_file("starting", "Supcrtbl is starting")
+    
+    bin_dir = job_dir / "bin"
+    output_dir = job_dir / "output"
+    bin_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True)
+    
+    # Copy executables and data files from supcrtfiles into the working directory
+    # NOTE: In the they left off the .dat, so that's a little weird
+    shutil.copy(SUPCRT_FILES / "supcrtbl", job_dir / "supcrtbl")
+    shutil.copy(SUPCRT_FILES / "dpronsbl.dat", bin_dir / "dpronsbl")
+    shutil.copy(SUPCRT_FILES / "dpronsbl_all.dat", bin_dir / "dpronsbl_all")
+    
+    log_file_path = job_dir / LOG_FILE_NAME
+    with open(log_file_path, "w") as log_file:
+      try:
+        log_file.write("=== Input Data ===\n")
+        log_file.write(input_data + "\n\n")
+        job_lock_file.update_lock_file("starting", "Supcrtbl is starting")
 
-    # If non-zeor return code, trhow it to the general exception clause
-    
-       
-    
-    # Create ZIP File in the root of the experiment directory with all files that have the outputFile name prefixed to them. 
-    # The current directory has plenty of files like this: outputFile.con, outputFile.rxn, outputFile.out, and some .xy files.
-    file_paths = glob.glob(f"{experiment_dir}/{form_data.outputFile}.*")
-    zipFilePath = os.path.join(experiment_dir, f"{form_data.outputFile}.zip")
-    MAX_SIZE = 100 * 100 * 1024 # 10 MB; could be changed later
-    with ZipFile(zipFilePath, "w") as zip_object:
-      for file_path in file_paths:
-        if os.path.getsize(file_path) > MAX_SIZE:
-          continue
-        zip_object.write(file_path, arcname=os.path.basename(file_path))
+        # Set up binary to run in the working dierctory and for piping data
+        process = subprocess.Popen(
+          [BINARY_PATH],
+          stdin=subprocess.PIPE,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          cwd=str(job_dir), 
+          text=True,
+        )
+
+        # Record the binary being run; this will be useful later for cleaning up processes
+        running_processes[experiment_id] = {
+          "process": process,
+          "start_time": time.time(),
+        }
+        
+        # Run the binary; wait up to TIMEOUT_SECONDS
+        stdout, stderr = process.communicate(input=input_data, timeout=TIMEOUT_SECONDS)
+
+        # Log stdout and stderr
+        log_file.write("=== STDOUT ===\n")
+        log_file.write(stdout + "\n")
+        log_file.write("=== STDERR ===\n")
+        log_file.write(stderr + "\n")
+
+        # If process failed, update lock file to indicate an internal error, kill it, and remove it from running processes; also early return.
+        # NOTE: The process may have produced an output file, but since we're doing an early return, we aren't moving any output files to the output dir
+        # so those won't show up in the results. If you want this changed, we can remove the early return, but again that doesn't fix the Fortran file error.
+        if process.returncode != 0:
+          job_lock_file.update_lock_file("error", f"Supcrtbl process error: {stderr}")
+          process.kill()
+          del running_processes[experiment_id]	
+          return
           
-    update_lock_file(lock_file_path, "completed", "Supcrtbl completed successfully")    
-  except TimeoutError:
-    # Update status in lockfile to timeout
-    update_lock_file(lock_file_path, "timeout", "Supcrtbl timed out after 2 minutes")
-  except Exception as e:
-    # General exception not necessarily involving the binary, so it could be some other important operation other than the process, 
-    # but the binary process could still be running.
-    update_lock_file(lock_file_path, "error", f"Supcrtbl error: {str(e)}")
-  finally:
-    # At this point, the process failed or succeeeded, but at least it ended:
-    # 1. Regardless of error or completion, just kill the process if not already dead 
-    # 2. Get the strings containing stdout and stderr; log them into the experiment's log file.
-    # 3. Remove completed processes from our dictionary of running processes
-    process.kill()
-    stdout, stderr = process.communicate()
-    logger.log("stdout", stdout)
-    logger.log("stderr", stderr)
-    if exp_id in running_processes:
-      del running_processes[exp_id]
+        # Wait for the binary to produce all output files
+        time.sleep(1)
 
-def start_supcrtbl_job(exp_id: str, experiment_dir: str, form_data: SupcrtblFormData, react_file: Union[UploadFile, None]):
-    lock_file_path = os.path.join(experiment_dir, ".lock")
-    update_lock_file(lock_file_path, "starting", "Process is starting")
-    thread = threading.Thread(
-      target=run_supcrtbl_process,
-      args=(exp_id, experiment_dir, lock_file_path, form_data, react_file)
-    )
-    thread.daemon = True
-    thread.start()
+        # Create ZIP file: Get all files prefixed with the outputFile name in the job directory
+        zip_file_path = output_dir / f"{output_file}.zip"
+        MAX_SIZE = 100 * 100 * 1024 # 10 MB; could be changed later
+        with ZipFile(zip_file_path, "w") as zip_object:
+          for file_path in job_dir.glob(f"{output_file}*"):
+            try:
+              if file_path.is_file() and os.path.getsize(file_path) > MAX_SIZE: 
+                continue
+              destination = output_dir / file_path.name
+              zip_object.write(file_path, file_path.name)
+              shutil.move(file_path, destination)
+            except Exception as e:
+              log_file.write(f"Error processing file {file_path}: {e}\n")
 
-def update_lock_file(lock_file_path: str, status: str, message: str):
-    """
-    Update the lock file with current status
-    """
-    lock_data = {
-        "status": status,
-        "message": message,
-        "timestamp": datetime.now().isoformat()
-    }
-    try:
-        with open(lock_file_path, "w") as f:
-            json.dump(lock_data, f)
-    except Exception as e:
-        print(f"Error updating lock file: {e}")
-
-def get_job_status(exp_id: str):
-    """Get the status of a job by experiment ID"""
-    experiment_dir = os.path.join(os.path.dirname(__file__), "nextTDB_workdirs", exp_id)
-    lock_file_path = os.path.join(experiment_dir, ".lock")
-
-    # Check if the experiment directory exists
-    if not os.path.exists(experiment_dir):
-        return {"status": "not_found", "message": "Experiment not found"}
-    
-    # Check if lock file exists
-    if not os.path.exists(lock_file_path):
-        # Check if output exists without lock file (old job or manually deleted lock)
-        output_dir = os.path.join(experiment_dir, "output")
-        if os.path.exists(output_dir) and any(os.listdir(output_dir)):
-            return {"status": "completed", "message": "Process completed (lock file missing)"}
-        return {"status": "unknown", "message": "Lock file not found"}
-    
-    # Read lock file
-    try:
-        with open(lock_file_path, "r") as f:
-            lock_data = json.load(f)
-        return lock_data
-    except Exception as e:
-        return {"status": "error", "message": f"Error reading lock file: {str(e)}"}
-
-# Extra stuff from original 
-def get_job_log(exp_id: str):
-  log_file_path = os.path.join(os.path.dirname(__file__), "nextTDB_workdirs", f"{exp_id}", "supcrtbl.log")
-  if not os.path.exists(log_file_path):
-    return None
-  logger = ExperimentLogger(log_file_path)
-  return logger.getLogs()
+        job_lock_file.update_lock_file("completed", "Supcrtbl completed successfully!")
+      except subprocess.TimeoutExpired:
+        job_lock_file.update_lock_file("timeout", f"Supcrtbl timed out after {TIMEOUT_SECONDS / 60} minute(s)!")
+        log_file.write(f"Supcrtbl timed out after {TIMEOUT_SECONDS / 60} minute(s)!\n")
+      except Exception as e:
+        job_lock_file.update_lock_file("error", f"Supcrtbl error: {str(e)}")
+        log_file.write(f"Supcrtbl error: {str(e)}\n")
+      finally:
+        # 1: Kill process in running_processes; process could have been already completed at this point, but kill it anyways.
+        # 2: Remove processes from the dictionary
+        if experiment_id in running_processes:
+          running_processes[experiment_id]["process"].kill()
+          del running_processes[experiment_id]
 
 def cleanup_old_processes():
-    """
-    Clean up remaining processes that have been running too long.
-    """
+    """Cleans up old processes that might have slipped through the cracks"""
     now = time.time()
     expired_processes = []
-    for exp_id, process_info in running_processes.items():
-        if now - process_info["start_time"] > TIMEOUT_SECONDS: 
-            try:
-                process_info["process"].kill()
-                update_lock_file(process_info["lock_file"], "timeout", "Process killed after timeout")
-            except:
-                pass
-            expired_processes.append(exp_id)
+    # Iterate through our recorded map of running processes
+    for exp_id, process_info in running_processes.items():	
+      # Check if process has been running for longer than our timeout has indicated
+      # - Kill the process 
+      # - Update the lockfile related to the process
+      # - Remove the process from our map of running processes
+      if now - process_info["start_time"] > TIMEOUT_SECONDS: 
+        try:
+          process_info["process"].kill()
+          job_dir = UPLOAD_DIR / exp_id
+          job_lock_file = JobLockFile(exp_id, job_dir)
+          job_lock_file.update_lock_file("timeout", "Process killed after timeout")
+        except Exception as e:
+          print(f"Error cleaning up process {exp_id}: {str(e)}")
+        expired_processes.append(exp_id)
     
     # Remove expired processes from tracking
+    # NOTE: Don't delete it whilst iterating through dictionary since you'll get a RuntimeError
     for exp_id in expired_processes:
         del running_processes[exp_id]
-
-# Start a background thread to periodically clean up old processes
+        
 def start_cleanup_thread():
-    def cleanup_thread():
-        while True:
-            cleanup_old_processes()
-            time.sleep(TIMEOUT_SECONDS)  # Check every minute
+  """Start/Create a subthread that will handle cleaning up any long-running threads"""
+  def cleanup_thread():
+    while True:
+      cleanup_old_processes()
+      time.sleep(60) # Clean up processes every minute
     
-    thread = threading.Thread(target=cleanup_thread)
-    thread.daemon = True
-    thread.start()
+  thread = threading.Thread(target=cleanup_thread)
+  thread.daemon = True
+  thread.start()
 
-# Start the cleanup thread when this module is imported
 start_cleanup_thread()

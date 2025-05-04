@@ -111,7 +111,6 @@ export default function SupcrtbOnline() {
      * 6. Update the filteredSpecies list to only include species that include the
      * species name of the current species
      *
-     * NOTE: When an empty string I think it's going to give us null, so you probably have to manually chnage it back to mepty string instead of null?
      */
     const newInputs = [...reactionInputs];
     newInputs[index] = value;
@@ -490,7 +489,7 @@ export default function SupcrtbOnline() {
               onChange={handleDatabaseChange}
             >
               {Object.entries(databaseMap).map(([key, label]) => (
-                <option key={key} value={`${key}.dat`}>
+                <option key={key} value={key}>
                   {`${label}.dat`}
                 </option>
               ))}

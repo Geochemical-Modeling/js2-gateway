@@ -16,72 +16,76 @@ import { route_map } from '../../constants';
 export default function SupcrtblResults() {
   /**
    * - experimentId: A string representing the ID of the supcrtbl experiment/simulation that has been run.
-   * - status: The status of the request, and after it will represent the status of the experiment that's being queried.
+   * - status: The status of the request, and after it will represent the status of the experiment that's being queried. This will also act as an error message
    * - message: Represents the corresponding status message associated with the request.
    * - data: Data obtained from supcrtbl. It should be just an array "objects" that represent output files that should be able to be rendered.
    * - results: An array that contains the file data that's given from the resulting experiment.
-   * - error: Error message string
    * - copied: A short lasting staet to indicate whether the user has copied something or not. So we display the contents of the files in pre tags, and commonly in
    *          pre tags, you have a copy to clipboard button on the top right. So when this state is set to true, it indicates that hte user has successfully copied the
    *          file contents within a given pre tag. Of course since there's the potential to have multiple buttons, we have to do some differentiation.
    * - copiedIndex: The index of the element in data.results array being copied. without this when you click copy, all the buttons
    *                are going to show "copied", instead of just the one that you clicked.
-   * - isCompletedRef: A reference to a boolean. So the idea is that we want to keep polling the backend for the status of the experiment, until we get confirmation
-   *                   that the simulation is confirmed to not be running anymore, meaning it has finished somehow. Once we know this, we can set this boolean to true
-   *                  in order to stop polling as we don't want to bother the server anymore. You could achieve this in other ways, but using a reference makes things very clear and readable.
-   * - timerRef: Polling requires the client to make requests frequently. To achieve this, the component has a reference to a setTimeout, so basically after an x amount of seconds, we'll
-   *            call a fetch function fetchResults() to get our data.
-   */
+   * - isCompletedRef: This ref is for tracking whether the job is completed. This helps prevent us from setting up the next timeout.
+   * - timerRef: Reference to the timer that polls status after each delay. This process is actually recursive.
+  */
   const { experimentId } = useParams();
+  const [error, setError] = useState('');
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
   const [data, setData] = useState([]);
   const [copied, setCopied] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(-1);
+
+  // Use refs to track completion state and avoid stale closures in effects
   const isCompletedRef = useRef(false);
   const timerRef = useRef(null);
+  const POLLING_INTERVAL = 3000;
 
+  /**
+   * Fetches the status of the experiment. Use this when doing frequent polling.
+   */
   const fetchStatus = useCallback(async () => {
-    /**
-     * Here we define and memoize a function, so that it's not reconstructed on every re-render. fetchStatus()
-     * will query the backend for the status on the simulation, updating state and references whilst doing so.
-     *
-     * Essentially if the simulation is in a "finished" state, e.g. completed, error, or timeout, then we'll
-     * fetch the data from that simulation and also make sure that we stop polling by setting the isCompletedRef to true.
-     *
-     * The reason that we memoize the creation of the function itself is because this allows us to
-     * call the function within useState, infinitely triggering the effect.
-     *
-     */
+    // Don't fetch if already completed
     if (isCompletedRef.current) {
       return;
     }
+
     try {
       const response = await fetch(`/api/supcrtbl/status/${experimentId}`);
-      const json = await response.json();
+      const data = await response.json();
 
-      setStatus(json.data.status);
-      setMessage(json.data.message);
+      setStatus(data.data.status);
+      setMessage(data.data.message);
 
-      // If the simulation is still running, early return
-      if (json.data.status === 'running') {
-        return;
-      }
+      // If completed, get results once and set completion flag
+      if (data.data.status === 'completed') {
+        isCompletedRef.current = true;
 
-      // At this point, the status could be completed, error, or timeout. Regardless it's in
-      // a finished state, so we want to set the ref to stop polling and clean up our timer reference.
-      // Only if the simulation completed successfully, we'll fetch the simulation data!
-      isCompletedRef.current = true;
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      if (json.data.status === 'completed') {
+        // Stop polling by clearing the timer
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+
+        // Fetch results once
         fetchResults();
+      } else if (
+        data.data.status === 'error' ||
+        data.data.status === 'timeout'
+      ) {
+        // Also stop polling on error or timeout
+        isCompletedRef.current = true;
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
       }
     } catch (error) {
       console.error('Error fetching status:', error);
+      setError('Failed to fetch job status. Please try again later.');
+
+      // Stop polling on error
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
@@ -89,6 +93,10 @@ export default function SupcrtblResults() {
     }
   }, [experimentId]);
 
+  /**
+   * Fetches the reuslts of the experiment. Call this when the experimnet completed successfully,
+   * so when status === 'completed'
+   */
   const fetchResults = async () => {
     try {
       const response = await fetch(`/api/supcrtbl/result/${experimentId}`);
@@ -99,30 +107,32 @@ export default function SupcrtblResults() {
     }
   };
 
-  /**
-   * This effect clears the previous setTimeout reference, if it even exists, and then sets a new timeout, allowing the fetch to be called after a few seconds.
-   * The effect also resets isCompleteRef.current to false, to indicate that this is a blank slate and new request, allowing our client to actually make a request, and
-   * not make it think that the simulation has already been complete. So it's the first render that matters and actually does the work.
-   *
-   * Then after, every 3 seconds, pollStatus calls itself, to fetch data, fetch data may modify some refs and states. If isCompleted is still false, then
-   * we create a setTimeout on pollStatus again, akin to a recursive function.
-   */
+  // Effect for initial fetch and polling setup
+
   useEffect(() => {
+    // Reset completion state when experimentId changes
     isCompletedRef.current = false;
+
+    // Clear any existing timer
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
 
+    // Define polling function
     const pollStatus = () => {
       fetchStatus().then(() => {
+        // Only set up next poll if not completed
         if (!isCompletedRef.current) {
-          timerRef.current = setTimeout(pollStatus, 3000);
+          timerRef.current = setTimeout(pollStatus, POLLING_INTERVAL);
         }
       });
     };
+
+    // Start polling
     pollStatus();
 
+    // Cleanup function
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -131,9 +141,22 @@ export default function SupcrtblResults() {
     };
   }, [experimentId, fetchStatus]);
 
+  /**
+   * Handles hitting the download endpoint to download the zip file.
+   *
+   * NOTE: We use an invisible iframe over window.open(uri) because using window
+   * will cause the screen to flicker due to the browser opening a new tab or window. As a result
+   * it'll briefly reload the page. we can use the hidden iframe to download the files without window
+   * flickering.
+   */
   const handleDownload = () => {
-    // Downloads the file
-    window.open(`/api/supcrtbl/download/${experimentId}`, '_blank');
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = `/api/supcrtbl/download/${experimentId}`;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 1000);
   };
 
   /**
@@ -197,7 +220,6 @@ export default function SupcrtblResults() {
             </p>
           </div>
         );
-
       case 'completed':
         return (
           <div className="rvt-m-top-lg">
@@ -215,24 +237,25 @@ export default function SupcrtblResults() {
                 Download Results
               </button>
               <div>
-                {data &&
+                {data && data.length > 0 ? (
                   data.map((file_obj, index) => (
-                    <div>
+                    <div key={index}>
                       <h3 className="rvt-weight-md">{file_obj.filename}</h3>
                       <pre className="tsv-container">
                         <button
                           className="copy-button"
-                          onClick={() =>
-                            handleClipBoardCopy(index, file_obj.content)
-                          }
+                          onClick={() => handleClipBoardCopy(index, file_obj.content)}
                         >
                           {/* If the user copied something, and this is the index of the element they copied */}
-                          {copied && index == copiedIndex ? 'Copied!' : 'Copy'}
+                          {copied && index === copiedIndex ? 'Copied!' : 'Copy'}
                         </button>
                         {file_obj.content}
                       </pre>
                     </div>
-                  ))}
+                  ))
+                ) : (
+                  <p>No output files</p>
+                )}
               </div>
             </div>
           </div>
@@ -287,6 +310,8 @@ export default function SupcrtblResults() {
           <hr />
         </header>
         <p className="rvt-text-bold">Experiment ID: {experimentId}</p>
+
+        {error && <Alert title="Error" subtitle={error} type="error" />}
 
         {renderStatusInfo()}
 
