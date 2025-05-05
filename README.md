@@ -28,7 +28,7 @@ make deploy # Simulates a deployment on your local, single node Docker Swarm Clu
 - [x] FastAPI backend
   - [x] Serve SPA
   - [x] Handle Auth
-  - [ ] Handle legacy PHP applications 
+  - [x] Handle legacy PHP applications 
 - [x] CILogon Credentials
 
 ### Infrastructure
