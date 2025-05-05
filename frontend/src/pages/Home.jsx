@@ -145,7 +145,7 @@ const Home = () => {
               to 1000°C, but the ranges exceed the original limits stated for
               minerals in Johnson et al. (1992) and vary for individual species.
             </p>
-            <Link href="#0" className="rvt-cta" rel="noreferrer">
+            <Link to={route_map.SUPCRTBL} className="rvt-cta" rel="noreferrer">
               Use SUPCRTBL
             </Link>
             <hr />

@@ -1,0 +1,30 @@
+/* Write out the CSS for the grid */
+
+.card-grid {
+  display: grid;
+  place-items: center;
+  align-items: start;
+  justify-content: center;
+
+  /* Basically for all items in the grid, it's in range (250px to 1fraction) */
+  /* Autofit will handle a lot of hte responsiveness */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  row-gap: 8px;
+
+  column-gap: 16px;
+}
+
+/* From small to medium give us up to 2 cards per row*/
+@media (min-width: 46.25em) {
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(250px, 1fr));
+  }
+}
+
+/* At large and above, use all four cards for grid cols; obviously it's overflowing the container, you can check this by 
+putting a border around the card-grid, but all that's under the hood and it looks nice which is all we care aout */
+@media (min-width: 67.5em) {
+  .card-grid {
+    grid-template-columns: repeat(4, minmax(250px, 1fr));
+  }
+}

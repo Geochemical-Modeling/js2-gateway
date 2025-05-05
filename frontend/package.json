@@ -11,9 +11,13 @@
     "preview": "rsbuild preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^7.0.2",
     "chart.js": "^4.4.9",
     "fast-glob": "^3.3.3",
     "react": "^18.3.1",
+    "react-bootstrap": "^2.10.9",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.5.0",
     "rivet-core": "^2.9.0"

@@ -12,7 +12,7 @@ export const route_map = {
   RATE_CALCULATOR: '/RateCalculator',
   RATE_SCRIPTS: '/RateScripts',
   H2S_CALCULATOR: '/H2SCalculator',
-  SUPCRTBL_ONLINE_INPUT_FILE: '/SupcrtblOnlineInputFile',
+  SUPCRTBL_ONLINE: '/SupcrtblOnline',
   PHREEQC_ONLINE: '/PhreeqcOnline',
   SOLUBILITY_CALCULATOR: '/SolubilityCalculator',
   H2S_CALCULATOR_ONLINE: '/H2SCalculatorOnline',

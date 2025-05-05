@@ -19,6 +19,10 @@ import RateCalculatorOnline from './pages/RateCalculator/RateCalculatorOnline.js
 import Phreeqc from './pages/Phreeqc/Phreeqc.jsx';
 import PhreeqcOnline from './pages/Phreeqc/PhreeqcOnline.jsx';
 import PhreeqcResults from './pages/Phreeqc/PhreeqcResults.jsx';
+import Supcrtbl from './pages/Supcrtbl/Supcrtbl.jsx';
+import SupcrtbOnline from './pages/Supcrtbl/SupcrtblOnline.jsx';
+import SupcrtblResults from './pages/Supcrtbl/SupcrtblResults.jsx';
+import ScrollToTopOfPage from './components/ScrollToTopOfPage.jsx';
 
 function App() {
   return (
@@ -26,11 +30,13 @@ function App() {
       <Router>
         <OnboardingCheck />
         <HomeNotificationToast />
+        <ScrollToTopOfPage />
         <Routes>
           <Route element={<Layout />}>
             {/* Public routes accessible to all users */}
             <Route path="/" element={<Home />} />
             <Route path="/onboarding" element={<Onboarding />} />
+
             <Route path={route_map.ADMIN_PAGE} element={<AdminPage />} />
 
             {/* Protected routes requiring approval */}
@@ -54,7 +60,17 @@ function App() {
                 element={<PhreeqcResults />}
               />
 
-              <Route path={route_map.SUPCRTBL} element={<NotFound />} />
+              <Route path={route_map.SUPCRTBL} element={<Supcrtbl />} />
+              <Route
+                path={route_map.SUPCRTBL_ONLINE}
+                element={<SupcrtbOnline />}
+              />
+              {/*  */}
+              <Route
+                path="/supcrtbl/results/:experimentId"
+                element={<SupcrtblResults />}
+              />
+
               <Route path={route_map.RATE_SCRIPTS} element={<RateScripts />} />
               <Route
                 path={route_map.H2S_CALCULATOR}
