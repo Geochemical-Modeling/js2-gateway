@@ -27,9 +27,9 @@ jobs:
       - name: Build Docker image
         run: |
           make build
-          docker build -t ghcr.io/your-org/js2-gateway:latest -t ghcr.io/your-org/js2-gateway:${{ github.sha }} .
+          docker build -t ghcr.io/geochemical-modeling/js2-gateway:latest -t ghcr.io/geochemical-modeling/js2-gateway:${{ github.sha }} .
 
       - name: Push Docker image
         run: |
           docker push ghcr.io/geochemical-modeling/js2-gateway:latest
-          docker push ghcr.io/your-org/js2-gateway:${{ github.sha }}
+          docker push ghcr.io/geochemical-modeling/js2-gateway:${{ github.sha }}
