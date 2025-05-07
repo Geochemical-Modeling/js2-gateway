@@ -30,16 +30,18 @@ export default function SupcrtbOnline() {
 
   const fetchSpeciesData = async (database) => {
     try {
-      // TODO: Replace this with our server!
-      const response = await fetch(
-        `https://js2test.ear180013.projects.jetstream-cloud.org/DB.php?query=Name-${database}`,
-      );
+      const response = await fetch(`/api/species?query=${database}`);
+      const allSpecies = await response.json();
 
-      const data = await response.json();
-      console.log('Fetched species data:', data); // Log the fetched data
-
+      // const response = await fetch(
+      //   `https://js2test.ear180013.projects.jetstream-cloud.org/DB.php?query=Name-${database}`,
+      // );
       // Flatten the nested arrays into a single array
-      const allSpecies = Object.values(data).flat();
+      // const allSpecies = Object.values(data).flat();
+
+      // Use this to see if there's a difference in the number of species. If there
+      // aren't, then it's probably a good change.
+      console.log('Fetched species data:', data); // Log the fetched data
       console.log('Flattened species data:', allSpecies); // Log the flattened data
 
       setSpecies(allSpecies);

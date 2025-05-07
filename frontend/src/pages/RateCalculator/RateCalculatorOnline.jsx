@@ -74,7 +74,9 @@ export default function RateCalculatorOnline() {
     const fetchSpecies = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/rate/species');
+
+        const response = await fetch('/api/species?query=Species');
+        // const response = await fetch('/api/rate/species');
 
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
