@@ -4,7 +4,7 @@
  */
 
 export const headerNameMap = {
-  // Given a label for an input, we'll map it to the name of the input, which will be affected 
+  // Given a label for an input, we'll map it to the name of the input, which will be affected
   // when the data is sent as form data.
   // NOTE: I don't think this covers all inputs.
   'Output File Name:': 'outputFile',
@@ -17,7 +17,7 @@ export const headerNameMap = {
     'univariantCurveOption', // included and verified
   'Specify tabulation option(Chronic, Thermal):': 'tabulationChoricOption', // included and verified
   'Specify table-increment option:': 'tableIncrement', // included and verified
-  'Specify univariant calculation option:': 'univariantCalcOption', // included and verified 
+  'Specify univariant calculation option:': 'univariantCalcOption', // included and verified
 };
 
 export const headerValueMap = {
@@ -41,11 +41,11 @@ export const headerValueMap = {
 
 export const resetMap = {
   // This object maps a given label for a radio option to the names of certain states
-  // This is later used to make it so when we click a radio option, we reset related boolean staets.  
+  // This is later used to make it so when we click a radio option, we reset related boolean staets.
   'One-Phase Region': [
     'isLiquidVaporSaturationCurveSelected',
 
-    // Clears independentStateVar radio group? Idk why 
+    // Clears independentStateVar radio group? Idk why
     'isTemperatureDensitySelected',
     'isTemperaturePressureSelected',
 
@@ -57,7 +57,7 @@ export const resetMap = {
     'isCalculateIsochoricSelected',
     'isCalculateIsothermalSelected',
 
-    // CLear tabulationBaric as well 
+    // CLear tabulationBaric as well
     'isCalculateIsoBaricSelected',
 
     // Clear the univariant curve option
@@ -104,7 +104,7 @@ export const resetMap = {
 
   // independentStateVars resetter
   'Temperature (degCel), density(H2O) (g/cc)': [
-    // Reset, or I guess update independentStateVar; 
+    // Reset, or I guess update independentStateVar;
     'isTemperaturePressureSelected',
 
     // Reset lipVapSatVar

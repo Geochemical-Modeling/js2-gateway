@@ -111,7 +111,8 @@ async def auth_me(request: Request, response: Response):
 
     try:
         user_info_response = requests.get(
-            CILOGON_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"}
+            CILOGON_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"},
+            timeout=2
         )
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to fetch user info: {e}")
@@ -124,6 +125,7 @@ async def auth_me(request: Request, response: Response):
 
     if user_info_response.status_code == 200:
         try:
+            logger.info("User info response received successfully")
             user_info = user_info_response.json()
 
             # Get user authorization details from database using the email

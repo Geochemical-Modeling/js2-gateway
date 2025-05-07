@@ -27,7 +27,7 @@ export default function SupcrtblResults() {
    *                are going to show "copied", instead of just the one that you clicked.
    * - isCompletedRef: This ref is for tracking whether the job is completed. This helps prevent us from setting up the next timeout.
    * - timerRef: Reference to the timer that polls status after each delay. This process is actually recursive.
-  */
+   */
   const { experimentId } = useParams();
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -244,7 +244,9 @@ export default function SupcrtblResults() {
                       <pre className="tsv-container">
                         <button
                           className="copy-button"
-                          onClick={() => handleClipBoardCopy(index, file_obj.content)}
+                          onClick={() =>
+                            handleClipBoardCopy(index, file_obj.content)
+                          }
                         >
                           {/* If the user copied something, and this is the index of the element they copied */}
                           {copied && index === copiedIndex ? 'Copied!' : 'Copy'}

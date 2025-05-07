@@ -1,22 +1,49 @@
 version: "3.8"
 
+networks:
+  caddy:
+    driver: overlay
+    attachable: true
+
 services:
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - caddy_data:/data
+    environment:
+      - CADDY_INGRESS_NETWORKS=js2-gateway-stack_caddy
+    networks:
+      - caddy
+    deploy:
+      restart_policy:
+        condition: on-failure
+
   app:
     image: js2-gateway:latest
     env_file:
       - .env
     deploy:
-      replicas: 3
+      replicas: 1
       update_config:
-        parallelism: 1
-        delay: 10s
+        parallelism: 2
+        # delay: 10s
         order: start-first
       restart_policy:
         condition: on-failure
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    ports:
-      - "4000:8000"
+      labels:
+        caddy: js2-gateway.ear180013.projects.jetstream-cloud.org
+        caddy.reverse_proxy: "{{upstreams 8000}}"
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8000"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 3
+    networks:
+      - caddy
+
+volumes:
+  caddy_data:

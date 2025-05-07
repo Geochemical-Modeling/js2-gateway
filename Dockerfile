@@ -17,4 +17,4 @@ COPY frontend/dist ./dist
 RUN chmod +x /app/app/routes/co2/main
 RUN chmod +x /app/app/routes/phreeqc/phreeqc
 
-CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0"]
+CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

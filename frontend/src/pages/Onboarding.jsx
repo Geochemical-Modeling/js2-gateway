@@ -118,6 +118,8 @@ function Onboarding() {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
+                      readOnly
+                      disabled
                       required
                     />
                     <small className="rvt-color-neutral-500">
