@@ -23,27 +23,44 @@ services:
         condition: on-failure
 
   app:
-    image: js2-gateway:latest
+    image: ghcr.io/geochemical-modeling/js2-gateway:latest
     env_file:
       - .env
     deploy:
       replicas: 1
       update_config:
         parallelism: 2
-        # delay: 10s
+        delay: 10s
         order: start-first
       restart_policy:
         condition: on-failure
       labels:
         caddy: js2-gateway.ear180013.projects.jetstream-cloud.org
         caddy.reverse_proxy: "{{upstreams 8000}}"
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:8000"]
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 3
+        com.centurylinklabs.watchtower.enable: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - caddy
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup --include-stopped --revive-stopped --label-enable --monitor-only
+    environment:
+      - WATCHTOWER_NO_STARTUP_MESSAGE=true
+      - WATCHTOWER_DEBUG=false
+    networks:
+      - caddy
+    deploy:
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "com.centurylinklabs.watchtower.enable=true"
 
 volumes:
   caddy_data:
