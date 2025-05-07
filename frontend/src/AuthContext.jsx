@@ -7,6 +7,36 @@ const AuthContext = createContext();
 // Custom hook to use the Auth Context
 export const useAuth = () => useContext(AuthContext);
 
+// Simple loading spinner component
+const LoadingSpinner = () => (
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      width: '100%',
+    }}
+  >
+    <div
+      style={{
+        border: '4px solid rgba(0, 0, 0, 0.1)',
+        borderLeft: '4px solid #3498db',
+        borderRadius: '50%',
+        width: '30px',
+        height: '30px',
+        animation: 'spin 1s linear infinite',
+      }}
+    />
+    <style jsx>{`
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
+
 // Auth Provider Component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -16,6 +46,7 @@ export const AuthProvider = ({ children }) => {
   const [isApproved, setIsApproved] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -30,6 +61,7 @@ export const AuthProvider = ({ children }) => {
         setIsApproved(true);
         setIsPending(false);
         setAuthChecked(true);
+        setIsAuthLoading(false);
         return;
       }
 
@@ -67,6 +99,7 @@ export const AuthProvider = ({ children }) => {
         setIsPending(false);
       } finally {
         setAuthChecked(true);
+        setIsAuthLoading(false);
       }
     };
 
@@ -126,6 +159,7 @@ export const AuthProvider = ({ children }) => {
         userAuth,
         isAuthenticated: IS_AUTH_DISABLED ? true : !!user,
         authChecked,
+        isAuthLoading,
         isNewUser,
         needsOnboarding,
         isApproved,
@@ -135,7 +169,7 @@ export const AuthProvider = ({ children }) => {
         isAuthDisabled: IS_AUTH_DISABLED,
       }}
     >
-      {authChecked ? children : null}
+      {isAuthLoading ? <LoadingSpinner /> : children}
     </AuthContext.Provider>
   );
 };
