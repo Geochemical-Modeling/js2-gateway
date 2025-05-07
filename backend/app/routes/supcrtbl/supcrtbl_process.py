@@ -179,4 +179,4 @@ def start_cleanup_thread():
   thread.daemon = True
   thread.start()
 
-# start_cleanup_thread()
+start_cleanup_thread()
