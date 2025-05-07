@@ -6,6 +6,9 @@ on:
     paths:
       - '**/Dockerfile'
       - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.json'
+      - '**/*.py'
       - '.github/workflows/docker-publish.yml'
 
 jobs:
