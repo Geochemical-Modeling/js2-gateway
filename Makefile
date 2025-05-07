@@ -1,5 +1,6 @@
 COMPOSE_FILE=docker-compose.dev.yml
 PROJECT_NAME=js2-gateway
+IMAGE_NAME=ghcr.io/geochemical-modeling/js2-gateway
 STACK_NAME=$(PROJECT_NAME)-stack
 STACK_FILE=stack.yml
 TAG=latest
@@ -38,7 +39,7 @@ frontend:
 build:
 	@echo "Building the project..."
 	@cd frontend && npm install && npm run build
-	docker build -t $(PROJECT_NAME):$(TAG) .
+	docker build -t $(IMAGE_NAME):$(TAG) .
 
 # Expect a wait about 5 seconds for the replicas to be created after you run the command
 deploy: build
