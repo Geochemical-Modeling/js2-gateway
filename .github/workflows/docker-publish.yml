@@ -27,6 +27,7 @@ jobs:
       - name: Build Docker image
         run: |
           make build
+          docker build -t ghcr.io/your-org/js2-gateway:latest -t ghcr.io/your-org/js2-gateway:${{ github.sha }} .
 
       - name: Push Docker image
         run: |
