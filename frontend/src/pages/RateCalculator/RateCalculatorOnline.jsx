@@ -74,16 +74,12 @@ export default function RateCalculatorOnline() {
     const fetchSpecies = async () => {
       try {
         setIsLoading(true);
-
         const response = await fetch('/api/species?query=Species');
-        // const response = await fetch('/api/rate/species');
-
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-
-        const data = await response.json();
-        setSpeciesArray(data.species || []);
+        const species = (await response.json()).data.species;
+        setSpeciesArray(species || []);
       } catch (err) {
         console.error('Error fetching mineral species:', err);
         setError('Failed to load mineral species. Please try again later.');
