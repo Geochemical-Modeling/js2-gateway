@@ -30,20 +30,16 @@ export default function SupcrtbOnline() {
 
   const fetchSpeciesData = async (database) => {
     try {
-      // TODO: Replace this with our server!
-      const response = await fetch(
-        `https://js2test.ear180013.projects.jetstream-cloud.org/DB.php?query=Name-${database}`,
-      );
+      const response = await fetch(`/api/species?query=${database}`);
 
-      const data = await response.json();
-      console.log('Fetched species data:', data); // Log the fetched data
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
 
-      // Flatten the nested arrays into a single array
-      const allSpecies = Object.values(data).flat();
-      console.log('Flattened species data:', allSpecies); // Log the flattened data
+      const data = (await response.json()).data;
 
-      setSpecies(allSpecies);
-      setFilteredSpecies(allSpecies);
+      setSpecies(data.species);
+      setFilteredSpecies(data.species);
     } catch (error) {
       console.error('Error fetching species data:', error);
     }
