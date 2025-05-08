@@ -32,18 +32,18 @@ make deploy # Simulates a deployment on your local, single node Docker Swarm Clu
 - [x] CILogon Credentials
 
 ### Infrastructure
-- [ ] Docker Swarm Deployments
+- [x] Docker Swarm Deployments
   - [x] Basic Green-Blue Docker Stack Setup
   - [x] Healthchecks for smooth failover
-  - [ ] Caddy Reverse Proxying to Service (not to Containers!)
+  - [x] Caddy Reverse Proxying to Service (not to Containers!)
      
 ### CI/CD
 - [x] Local development environment
   - [x] Local Docker Compose build and testing
   - [x] Local Docker Swarm deploy (simulate prod environment)
-- [ ] Remote CI/CD
-  - [ ] Basic GitOps to build image from main
-  - [ ] Automatic image pulling (Watchtower)
+- [x] Remote CI/CD
+  - [x] Basic GitOps to build image from main
+  - [x] Automatic image pulling (Watchtower)
 
 ### Why These Changes Matter
 #### Application
