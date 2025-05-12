@@ -40,43 +40,6 @@ def log_operation(operation_type, message, error=None):
     else:
         logger.info(f"[RATE-CALC] [{timestamp}] [{operation_type}] {message}")
 
-
-@router.get("/api/rate/species", tags=["Rate Calculator"])
-async def get_mineral_species(request: Request):
-    """Get list of available mineral species for the rate calculator."""
-    client_ip = request.client.host if request.client else "unknown"
-    
-    try:
-        with get_session() as session:
-            if session is None:
-                logger.error(f"[RATE-CALC] Database session is None. Cannot fetch mineral species. Client: {client_ip}")
-                raise HTTPException(status_code=503, detail="Database connection unavailable")
-            
-            # Use SQLAlchemy text() to create SQL expression for cross-database query
-            query = text(f"""
-                SELECT DISTINCT Species 
-                FROM {RATE_CALC_DB}.rate_utility_palandri 
-                UNION 
-                SELECT DISTINCT Species 
-                FROM {RATE_CALC_DB}.rate_utility_carbonates 
-                UNION 
-                SELECT DISTINCT Species 
-                FROM {RATE_CALC_DB}.rate_utility_oxygen 
-                ORDER BY Species
-            """)
-            
-            result = session.execute(query)
-            species_list = [row[0] for row in result]
-            
-            logger.info(f"[RATE-CALC] Retrieved {len(species_list)} mineral species for client: {client_ip}")
-            
-            return {"species": species_list}
-        
-    except Exception as e:
-        logger.error(f"[RATE-CALC] Error fetching mineral species: {str(e)} - Client: {client_ip}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.get("/api/rate/calculate", response_model=RateResult, tags=["Rate Calculator"])
 async def calculate_rate(
     request: Request,

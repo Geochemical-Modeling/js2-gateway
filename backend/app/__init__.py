@@ -3,6 +3,8 @@ from app.routes.co2 import co2_calc
 from app.routes.rate import rate_calc
 from app.routes.phreeqc import phreeqc_calc
 from app.routes.supcrtbl import supcrtbl_calc
+from app.routes import minerals
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -32,6 +34,8 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         content=err_content,
     )
 
+
+app.include_router(minerals.router, tags=["minerals"])
 app.include_router(phreeqc_calc.router, tags=["phreeqc"])
 app.include_router(supcrtbl_calc.router, tags=["Supcrtbl"])
 app.include_router(co2_calc.router, tags=["CO2"])
