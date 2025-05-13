@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Chart from 'chart.js/auto';
-import { block1Data, block2Data, block3Data } from '../../data/h2s';
 
-// Constants
+// Constants; labels for chart axes, names for the different systems they can choose and a bunch of rgb values for the graph to use
 const labels = ['P, bar', 'xH2S+xCO2', 'ρ, kg/m3', 'λH2S'];
 const systems = ['CO₂-H₂O-NaCl', 'H₂S-H₂O-NaCl', 'CO₂-H₂S-H₂O-NaCl'];
 const colors = [
@@ -17,129 +16,12 @@ const colors = [
   'rgba(0, 0, 250, 1)',
 ];
 
-// Generate pressure points - same as in Python code
+/**
+ * An array representing the pressure points/values. So we'll create an array with indices from 0 to 60, with each value
+ * containing i*10 value. So it's an array p = [0, 10, 20, ..., 600] representing the various pressure values, and this will be
+ * used when the user wants to select "P bar" for the x and y axes.
+ */
 const p = Array.from({ length: 61 }, (_, i) => i * 10);
-
-/**
- * Find the closest values in an array to a target value
- * @param {Array} arr - The array to search in
- * @param {Number} target - The target value to find closest values to
- * @returns {Array} - Array of [value1, value2, distance1, distance2]
- */
-function findClosestValues(arr, target) {
-  // Sort the array
-  const sorted = [...arr].sort((a, b) => a - b);
-
-  // If target is outside range, return boundary values
-  if (target <= sorted[0]) return [sorted[0], sorted[1], 1, 0];
-  if (target >= sorted[sorted.length - 1])
-    return [sorted[sorted.length - 2], sorted[sorted.length - 1], 0, 1];
-
-  // Find the closest value
-  let i = 0;
-  while (sorted[i] < target) i++;
-
-  // Return the two closest values and their distances
-  const val1 = sorted[i - 1];
-  const val2 = sorted[i];
-  const total = val2 - val1;
-  const dist1 = (target - val1) / total;
-  const dist2 = (val2 - target) / total;
-
-  return [val1, val2, dist1, dist2];
-}
-
-/**
- * Find the index of a value in an array
- * @param {Array} arr - The array to search in
- * @param {Number} value - The value to find
- * @returns {Number} - Index of the value or -1 if not found
- */
-function findValueIndex(arr, value) {
-  return arr.findIndex((item) => Math.abs(item - value) < 0.0001);
-}
-
-/**
- * Interpolate data based on temperature, pressure, and NaCl concentration
- * @param {Number} temp - Temperature in K
- * @param {Number} pressure - Pressure in bar
- * @param {Number} nacl - NaCl concentration in mol/kgH2O
- * @param {Object} blockData - The block data object with T, P, NaCl arrays and value arrays
- * @param {String} valueKey - The key for the values to interpolate (xH2S, r, H2S, or xH2SplusCO2)
- * @returns {Array} - Interpolated values for the pressure range
- */
-function interpolateData(temp, nacl, blockData, valueKey) {
-  // Find closest temperature values and weights
-  const [t1, t2, tw1, tw2] = findClosestValues(blockData.T, temp);
-
-  // Find closest NaCl values and weights
-  const [n1, n2, nw1, nw2] = findClosestValues(blockData.NaCl, nacl);
-
-  // Get indices
-  const t1Idx = findValueIndex(blockData.T, t1);
-  const t2Idx = findValueIndex(blockData.T, t2);
-  const n1Idx = findValueIndex(blockData.NaCl, n1);
-  const n2Idx = findValueIndex(blockData.NaCl, n2);
-
-  // Create interpolated results for each pressure point
-  const results = [];
-
-  // For simplicity in this placeholder implementation:
-  // We'll generate values that change based on pressure, temperature and NaCl
-  // In the real implementation, you would use actual data from blockData[valueKey]
-  const baseValues =
-    blockData[valueKey].slice(0, p.length) || Array(p.length).fill(0);
-
-  for (let i = 0; i < p.length; i++) {
-    // Simple weighting of factors - in real implementation you would access actual data points
-    // and do proper 3D interpolation between the 8 surrounding points in the T,P,NaCl space
-    const baseValue = baseValues[i % baseValues.length] || 0.01;
-
-    // Scale based on temperature and NaCl concentration
-    const tempFactor = 1 + (temp - 298.15) / 100;
-    const naclFactor = 1 + nacl / 10;
-    const pressureFactor = 1 + p[i] / 600;
-
-    results.push(baseValue * tempFactor * naclFactor * pressureFactor);
-  }
-
-  return results;
-}
-
-// Compute model results using the imported data
-function computeBlock(blockNumber, temp, nacl) {
-  let result = [];
-
-  // Select the appropriate data block
-  const blockData =
-    blockNumber === 0
-      ? block1Data
-      : blockNumber === 1
-        ? block2Data
-        : block3Data;
-
-  // Interpolate data based on block type
-  if (blockNumber === 0 || blockNumber === 1) {
-    // Block1 and Block2: CO₂-H₂O-NaCl and H₂S-H₂O-NaCl
-    const xH2S = interpolateData(temp, nacl, blockData, 'xH2S');
-    const density = interpolateData(temp, nacl, blockData, 'r');
-    const lambda = interpolateData(temp, nacl, blockData, 'H2S');
-
-    result = [xH2S, density, lambda];
-  } else if (blockNumber === 2) {
-    // Block3: CO₂-H₂S-H₂O-NaCl
-    const xH2SplusCO2 = interpolateData(temp, nacl, blockData, 'xH2SplusCO2');
-
-    // For Block3, we only have xH2S+xCO2 data
-    // Create dummy values for density and lambda to keep the interface consistent
-    const dummyDensity = Array(61).fill(0);
-    const dummyLambda = Array(61).fill(0);
-
-    result = [xH2SplusCO2, dummyDensity, dummyLambda];
-  }
-
-  return result;
-}
 
 export default function H2SCalculatorOnline() {
   // State variables
@@ -150,16 +32,18 @@ export default function H2SCalculatorOnline() {
     xcoord: 0,
     ycoord: 1, // Default to showing xH2S+xCO2 on Y-axis
   });
-  const [enableRun, setEnableRun] = useState(true);
+
   const [graphHistory, setGraphHistory] = useState([]);
-  const [downloadData, setDownloadData] = useState('');
+  const [downloadData, setDownloadData] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
-  // Initialize Chart
+  /**
+   * This effect will initialize and create the chart if it doesn't already exist. This will just create the
+   * chart on the first render which is good.
+   */
   useEffect(() => {
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d');
@@ -244,9 +128,10 @@ export default function H2SCalculatorOnline() {
     const myChart = chartRef.current;
     const xCoord = formData.xcoord;
     const yCoord = formData.ycoord;
+    myChart.data.datasets = []; // Reset the data contained inside the chart, which is the idea of clearing the chart.
 
-    myChart.data.datasets = [];
-
+    // Iterate through graphHistory and re-render data based on xCoord and yCoord.
+    // Ensure x and y arrays are valid and skip experiments with missing or invalid data.
     for (let i = 0; i < graphHistory.length; i++) {
       let x = [];
       let y = [];
@@ -259,6 +144,10 @@ export default function H2SCalculatorOnline() {
           break;
         case 2:
           x = graphHistory[i].data[1];
+
+          // NOTE: This probably isn't the best way to do this because the results would be misleading.
+          // Personally I would just skip over it and inidcate that the data is not available in this format?
+          // x = graphHistory[i].data[0] ? graphHistory[i].data[0] : p;
           break;
         case 3:
           x = graphHistory[i].data[2];
@@ -283,8 +172,14 @@ export default function H2SCalculatorOnline() {
           console.log('Error');
       }
 
-      const coords = x.map((val, index) => ({ x: val, y: y[index] }));
+      if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length) {
+        console.warn(`Skipping invalid data for experiment ${i}`, { x, y });
+        continue;
+      }
 
+      // Create an array of objects with x and y properties, an object representing a poin on the graph.
+      // So we just take the value from the x array and then take the corresponding value from the y array.
+      const coords = x.map((val, index) => ({ x: val, y: y[index] }));
       myChart.data.datasets.push({
         label: `Temp: ${graphHistory[i].temp}K, mNaCl: ${graphHistory[i].mNaCl}`,
         data: coords,
@@ -298,16 +193,15 @@ export default function H2SCalculatorOnline() {
       });
     }
 
-    // Update axis titles
+    // These conditionals just update the labels for the x and y axes based on the xCoord and yCoord
+    // values that they pick. So if they pick 0, they should be seeing "P, bar" on the x-axis, and so on.
+    // We'll also update the title of the chart to be the system that they selected.
     if (myChart.options.scales?.x?.title) {
       myChart.options.scales.x.title.text = labels[xCoord];
     }
-
     if (myChart.options.scales?.y?.title) {
       myChart.options.scales.y.title.text = labels[yCoord];
     }
-
-    // Update chart title
     if (myChart.options.plugins?.title) {
       myChart.options.plugins.title.text = systems[formData.system];
     }
@@ -316,62 +210,59 @@ export default function H2SCalculatorOnline() {
   }, [graphHistory, formData.xcoord, formData.ycoord, formData.system]);
 
   // Run calculation using the external data files
-  const runExperiment = () => {
-    setEnableRun(false);
+  const runExperiment = async () => {
     setLoading(true);
     setError(null);
 
+    const adjustedFormData = checkBounds(formData);
+    setFormData(adjustedFormData);
+    const { system, temp, mNaCl } = adjustedFormData;
+
     try {
-      // Check bounds before running
-      const adjustedFormData = checkBounds(formData);
-      setFormData(adjustedFormData);
+      const response = await fetch(
+        `/api/h2s?system=${system}&temp=${temp}&mNaCl=${mNaCl}`,
+      );
+      if (!response.ok) {
+        throw new Error('Bad response from the server!');
+      }
+      const data = await response.json();
 
-      const { system, temp, mNaCl } = adjustedFormData;
+      const newComputedData = [];
+      for (let i = 0; i < data.length; i++) {
+        newComputedData.push(data[i].map((elem) => parseFloat(elem)));
+      }
 
-      // Client-side calculation
-      setTimeout(() => {
-        try {
-          // Compute the model results using the imported data
-          const newComputedData = computeBlock(system, temp, mNaCl);
-
-          // Update graphHistory
-          setGraphHistory((prevHistory) => [
-            ...prevHistory,
-            {
-              data: newComputedData,
-              system,
-              temp,
-              mNaCl,
-            },
-          ]);
-
-          // Prepare download data
-          prepareDownloadData(system, temp, mNaCl, newComputedData);
-
-          setError(null);
-        } catch (err) {
-          console.error('Calculation error:', err);
-          setError(`Calculation error: ${err.message}`);
-        } finally {
-          setEnableRun(true);
-          setLoading(false);
-        }
-      }, 500); // Small timeout to simulate calculation time
+      setGraphHistory((prevHistory) => [
+        ...prevHistory,
+        {
+          data: newComputedData,
+          system,
+          temp,
+          mNaCl,
+        },
+      ]);
+      prepareDownloadData(system, temp, mNaCl, newComputedData);
+      setError(null);
     } catch (error) {
-      console.error('Error:', error);
-      setError(`Error: ${error.message}`);
-      setEnableRun(true);
+      setError(
+        `runExperiment Error: ${error.message || 'Network error. Something went wrong, please try again later!'}`,
+      );
+    } finally {
       setLoading(false);
     }
   };
 
   // Prepare Download Data
   const prepareDownloadData = (system, temp, mNaCl, computedData) => {
-    const csvLabels = ['P, bar', 'xH2S+xCO2', 'ρ kg/m3', 'λH2S'];
     const csvData = [];
-    csvData.push(`Temperature,Pressure,NaCl,${csvLabels[1]}`);
+    csvData.push(`Temperature,Pressure,mNaCl,${labels[1]}`); // header of the csv file
+
+    /**
+     * For system 0 or 1, include all labels in the header since all 3 data rows exist.
+     * Otherwise, only include the first row's labels.
+     */ 
     if (system < 2) {
-      csvData[0] += `,${csvLabels[2]},${csvLabels[3]}`;
+      csvData[0] += `,${labels[2]},${labels[3]}`;
     }
     csvData[0] += '\n';
 
@@ -383,10 +274,13 @@ export default function H2SCalculatorOnline() {
       csvData.push(line + '\n');
     }
 
-    setDownloadData(csvData.join(''));
+    // Add the new CSV data to the downloadData list.
+    setDownloadData((prevData) => [...prevData, csvData.join('')]);
   };
 
-  // Check Bounds Function
+  /**
+   * Adjusts the values for the formData to be alid. Don't update the state, but just return an object containing the updated form data.
+   */
   const checkBounds = (newFormData) => {
     const { system } = newFormData;
     let { temp, mNaCl } = newFormData;
@@ -431,6 +325,7 @@ export default function H2SCalculatorOnline() {
     }
   };
 
+  // Handles how the select drop downs change input
   const onChangeSelect = (event, inputLabel) => {
     let newFormData = {
       ...formData,
@@ -439,16 +334,28 @@ export default function H2SCalculatorOnline() {
     setFormData(newFormData);
   };
 
-  // Handle Check Bounds Button Click
+  /**
+   * Handles adjusting the form data and then updating the form data state. The user can either manually check bounds, which is
+   * what happened when they call this function. Or the user can run the experiment, and so we'll handle adjusting the values automatically. In the latter case only checkBounds is called
+   * rather than handleCheckBounds.
+   */
   const handleCheckBounds = () => {
     const adjustedFormData = checkBounds(formData);
     setFormData(adjustedFormData);
   };
 
-  // Reset chart and data
+  /**
+   * Reset chart and data.
+   *
+   * 1. In this case, reset all entries in the graph history, so removing the graph associated with each experiment that the user ran.
+   * 2. Delete the downloadable data for the most recent experiment.
+   * 3. Reset the error message.
+   * 4. If the chart reference exists (which it should), remove all experiemnt data it has and update the chart.
+   *  This will clear the chart and remove all the data points from it.
+   */
   const resetChart = () => {
     setGraphHistory([]);
-    setDownloadData('');
+    setDownloadData([]);
     setError(null);
     if (chartRef.current) {
       chartRef.current.data.datasets = [];
@@ -456,23 +363,28 @@ export default function H2SCalculatorOnline() {
     }
   };
 
-  // Render History
+  /**
+   * Render the links to download the data for each experiment
+   */
   const renderHistory = () => {
     if (!graphHistory.length) return null;
+    const date = new Date();
+    const dateStr = `${
+      date.getMonth() + 1
+    }-${date.getDate()}-${date.getFullYear()}_${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
 
     return (
       <div className="rvt-m-top-md">
         <h3 className="rvt-ts-md rvt-text-medium">Download Results</h3>
         {graphHistory.map((item, idx) => {
-          const date = new Date();
-          const dateStr = `${
-            date.getMonth() + 1
-          }-${date.getDate()}-${date.getFullYear()}_${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
+          /**
+           * 1. Create the filename for the ith experiment's csv file.
+           * 2. Create the blob object containing the data for the CSV file and an object URL allowing the user can download the CSV.
+           * 3. Create a link for the user to download the CSV file. The link will so the specific system, temperature and mNaCl value for that given experiment.
+           */
           const fileName = `h2sOutput-${idx}-${dateStr}.csv`;
-
-          const blob = new Blob([downloadData], { type: 'text/csv' });
+          const blob = new Blob([downloadData[idx]], { type: 'text/csv' });
           const url = URL.createObjectURL(blob);
-
           return (
             <div key={`history-${idx}`} className="rvt-m-bottom-xs">
               <a href={url} download={fileName} className="rvt-link">
@@ -627,7 +539,7 @@ export default function H2SCalculatorOnline() {
                 type="button"
                 className="rvt-button"
                 onClick={runExperiment}
-                disabled={!enableRun}
+                disabled={loading}
               >
                 {loading ? 'Processing...' : 'Run'}
               </button>
@@ -686,18 +598,18 @@ export default function H2SCalculatorOnline() {
           </div>
         </div>
 
-        {/* Disclaimer */}
-        <div className="rvt-m-top-md rvt-m-bottom-lg">
-          <h3 className="rvt-ts-md rvt-text-medium">Disclaimer</h3>
-          <p>
-            This material was prepared, in part, sponsored by an agency of the
-            United States Government or Indiana University. Neither the United
-            States Government, nor Indiana University, makes any warranty,
-            express or implied, or assumes any legal liability or responsibility
-            for the accuracy, completeness, or usefulness of any information,
-            apparatus, product, or process disclosed, or represents that its use
-            would not infringe privately owned rights.
-          </p>
+        <div className="rvt-m-top-lg">
+          <div className="rvt-alert rvt-alert--info" role="alert">
+            <div className="rvt-alert__title">Note</div>
+            <p className="rvt-alert__message">
+              If you run a simulation with the system set to "CO₂-H₂S-H₂O-NaCl"
+              and select "ρ, kg/m3" or "λH2S" for either the x or y axes, the
+              data won't be graphed because the backend application does not
+              provide the necessary data for those configurations. Of course, to
+              see the data, you can just select "xH2S+xCO2" or "P, bar" for the
+              x or y axes so nothing is lost.
+            </p>
+          </div>
         </div>
       </div>
     </main>
