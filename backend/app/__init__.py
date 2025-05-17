@@ -17,23 +17,24 @@ app = FastAPI()
 
 # Setup middleware layer; for prod we should probably just let the only the client be the allowed origin
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+  CORSMiddleware,
+  allow_origins=["*"],
+  allow_credentials=True,
+  allow_methods=["*"],
+  allow_headers=["*"],
 )
+
 
 # The motivation is to catch all HTTPExceptions and return a consistent JSON response.
 # NOTE: If changed, please reflect those changes on frontend as well. It's simple just go to the fetch
 # functions for each calc.
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
-    err_content = {"status_code": exc.status_code, "message": exc.detail}
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=err_content,
-    )
+  err_content = {"status_code": exc.status_code, "message": exc.detail}
+  return JSONResponse(
+    status_code=exc.status_code,
+    content=err_content,
+  )
 
 
 app.include_router(minerals.router, tags=["minerals"])
@@ -48,10 +49,11 @@ app.include_router(rate_calc.router, tags=["Rate"])
 # Serve all static files (JS, CSS, images, etc.)
 app.mount("/static", StaticFiles(directory="/app/dist/static"), name="static")
 
+
 # Serve index.html for root and any unmatched frontend routes
 @app.get("/{full_path:path}", include_in_schema=False)
 async def serve_spa(full_path: str):
-    index_path = os.path.join("/app/dist", "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path)
-    return {"error": "index.html not found"}
+  index_path = os.path.join("/app/dist", "index.html")
+  if os.path.exists(index_path):
+    return FileResponse(index_path)
+  return {"error": "index.html not found"}
