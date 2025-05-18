@@ -85,16 +85,16 @@ async def run_calculation(
   job_dir = supcrtbl_process.UPLOAD_DIR / f"{experiment_id}"
   job_dir.mkdir(parents=True, exist_ok=True)
 
-  # Clean the output file name 
+  # Clean the output file name
   outputFile = "".join(c for c in outputFile if c.isalnum() or c in " ")
   outputFile = outputFile.replace(" ", "")
-  
 
   # Save reaction file if it was provided; creates experiment directory if needed
   if reactionOption == 0 and reactFile:
-
     # Clean react file name to prevent file traversals
-    reactFile.filename = "".join(c for c in reactFile.filename if c.isalnum() or c in " ")
+    reactFile.filename = "".join(
+      c for c in reactFile.filename if c.isalnum() or c in " "
+    )
     reactFile.filename = reactFile.filename.replace(" ", "")
 
     try:
@@ -205,6 +205,7 @@ async def run_calculation(
   except Exception as e:
     raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)} ")
 
+
 @router.get("/api/supcrtbl/result/{experiment_id}")
 def get_job_results(experiment_id: str):
   """Get all the output files that the experiment generated."""
@@ -254,6 +255,7 @@ def get_job_results(experiment_id: str):
 
   return {"data": results}
 
+
 @router.get("/api/supcrtbl/download/{experiment_id}")
 def download_file(experiment_id: str):
   """Attempts to return the zip file within the job directory's output directory for the user to download"""
@@ -279,6 +281,7 @@ def download_file(experiment_id: str):
     path=zip_file_path, filename=zip_filename, media_type="application/zip"
   )
 
+
 @router.get("/api/supcrtbl/status/{experiment_id}")
 def get_job_status(experiment_id: str):
   """Gets the status of a supcrtbl job given the ID of the experiment"""
@@ -294,13 +297,15 @@ def get_job_logs(experiment_id: str):
   NOTE: Really helpful for development and knowing why something failed.
   Shouldn't really be public facing. Logs don't really show sensitive info though.
   """
-  job_log_path = supcrtbl_process.UPLOAD_DIR / experiment_id / supcrtbl_process.LOG_FILE_NAME
-  
+  job_log_path = (
+    supcrtbl_process.UPLOAD_DIR / experiment_id / supcrtbl_process.LOG_FILE_NAME
+  )
+
   if not job_log_path.exists():
-    raise HTTPException(status_code=404, detail="Job not found!")   
-  
+    raise HTTPException(status_code=404, detail="Job not found!")
+
   try:
     with open(job_log_path, "r") as log:
       return log.read()
   except Exception as e:
-    raise HTTPException(status_code=500, detail="Error reading job log file!")   
+    raise HTTPException(status_code=500, detail="Error reading job log file!")

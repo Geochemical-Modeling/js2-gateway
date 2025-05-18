@@ -16,6 +16,8 @@ make down # Shutsdown all of the Docker Compose containers
 make logs # Get the logs from the Docker Compose deployment
 ```
 
+**Note:** Building the project with `make up` or `make build` will format the frontend and backend. The backend is done through a command, whilst the frontend is done automatically since we're using RS as a build tool with `biome.json`.
+
 ### Simulating a prod environment
 This one is mainly useful locally if you're wanting to see if a healthcheck is failing or some other broader *deployment* issue is happening. You should be testing your application with this (w/ IU's VPN for the database connection) before making a PR.
 ```sh

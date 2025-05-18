@@ -9,27 +9,25 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # These are allowed databases for the supcrtbl
-allowed_databases = [
-  "supcrtbl",
-  "supcrtbl_ree"
-]
+allowed_databases = ["supcrtbl", "supcrtbl_ree"]
 
 DB_TABLE_NAME = "geosci_consolidated_tables1"
 
+
 @router.get("/api/species")
 async def get_mineral_species(request: Request, query: str):
-    """Get list of available mineral species in the application
-    
-    NOTE: Ideally this endpoint should be used for both rate calc and supcrtblonline. The former always querying for "Species" and then
-    the later just querying for the database I guess. Though if you run into design issues, feel free to change this.
-    """
-    client_ip = request.client.host if request.client else "unknown"
+  """Get list of available mineral species in the application
 
-    # Construct query 
-    sql_query = None
-    if query == "Species":
-      # If they want species 
-      sql_query = text(f"""
+  NOTE: Ideally this endpoint should be used for both rate calc and supcrtblonline. The former always querying for "Species" and then
+  the later just querying for the database I guess. Though if you run into design issues, feel free to change this.
+  """
+  client_ip = request.client.host if request.client else "unknown"
+
+  # Construct query
+  sql_query = None
+  if query == "Species":
+    # If they want species
+    sql_query = text(f"""
           SELECT DISTINCT Species 
           FROM {DB_TABLE_NAME}.rate_utility_palandri 
           UNION 
@@ -40,12 +38,15 @@ async def get_mineral_species(request: Request, query: str):
           FROM {DB_TABLE_NAME}.rate_utility_oxygen 
           ORDER BY Species
       """)
-    else:
-      # Else they aren't using "Species", the query corresponds to a data file name or something
-      # NOTE: Use allow-list to prevent SQL injection.
-      if (query not in allowed_databases):
-          raise HTTPException(status_code=400, detail=f"Query called '{query}' is not supported. Use {str(allowed_databases)}")
-      sql_query = text(f"""
+  else:
+    # Else they aren't using "Species", the query corresponds to a data file name or something
+    # NOTE: Use allow-list to prevent SQL injection.
+    if query not in allowed_databases:
+      raise HTTPException(
+        status_code=400,
+        detail=f"Query called '{query}' is not supported. Use {str(allowed_databases)}",
+      )
+    sql_query = text(f"""
           SELECT Name 
           FROM {DB_TABLE_NAME}.{query}_nonphasetransition 
           UNION 
@@ -63,21 +64,22 @@ async def get_mineral_species(request: Request, query: str):
           ORDER BY Name
       """)
 
-    
-    try:
-        with get_session() as session:
-            if session is None:
-                logger.error(f"[Minerals] Database session is None. Cannot fetch mineral species. Client: {client_ip}")
-                raise HTTPException(status_code=503, detail="Database connection unavailable")
-          
-            result = session.exec(sql_query)
-            species_list = [row[0] for row in result]
-            logger.info(f"[Minerals] Retrieved {len(species_list)} mineral species for client: {client_ip}")
-            return {
-              "data": {
-                "species": species_list
-              }
-            }
-    except Exception as e:
-        logger.error(f"[Minerals] Error fetching mineral species: {str(e)} - Client: {client_ip}")
-        raise HTTPException(status_code=500, detail=str(e))
+  try:
+    with get_session() as session:
+      if session is None:
+        logger.error(
+          f"[Minerals] Database session is None. Cannot fetch mineral species. Client: {client_ip}"
+        )
+        raise HTTPException(status_code=503, detail="Database connection unavailable")
+
+      result = session.exec(sql_query)
+      species_list = [row[0] for row in result]
+      logger.info(
+        f"[Minerals] Retrieved {len(species_list)} mineral species for client: {client_ip}"
+      )
+      return {"data": {"species": species_list}}
+  except Exception as e:
+    logger.error(
+      f"[Minerals] Error fetching mineral species: {str(e)} - Client: {client_ip}"
+    )
+    raise HTTPException(status_code=500, detail=str(e))

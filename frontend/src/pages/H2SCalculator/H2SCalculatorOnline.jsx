@@ -260,7 +260,7 @@ export default function H2SCalculatorOnline() {
     /**
      * For system 0 or 1, include all labels in the header since all 3 data rows exist.
      * Otherwise, only include the first row's labels.
-     */ 
+     */
     if (system < 2) {
       csvData[0] += `,${labels[2]},${labels[3]}`;
     }
