@@ -11,7 +11,7 @@ TAG=latest
 up:
 	@echo "Building the project..."
 	@cd frontend && npm install && npm run build
-	@uv run ruff format
+	@cd backend && uv run ruff format
 	@echo "Starting up the project with docker compose..."
 	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up --build -d
 
@@ -39,7 +39,7 @@ frontend:
 
 build:
 	@echo "Building the project..."
-	@uv run ruff format
+	@cd backend && uv run ruff format
 	@cd frontend && npm install && npm run build
 	docker build -t $(IMAGE_NAME):$(TAG) .
 

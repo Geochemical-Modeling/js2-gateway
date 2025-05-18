@@ -153,6 +153,17 @@ async def auth_me(request: Request, response: Response):
 
                 if db_user:
                   logger.info(f"Found existing user in database: {db_user.id}")
+
+                  if db_user.archived == 1:
+                    logger.info(
+                      f"User with email '{db_user.email}' is archived. Cannot authenticate them!"
+                    )
+                    return {
+                      "status": "failure",
+                      "message": "Failed to fetch user info",
+                      "details": str(e),
+                    }
+
                   # Convert SQLModel to dict and add to response
                   user_auth = {
                     "id": db_user.id,
