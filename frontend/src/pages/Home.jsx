@@ -49,6 +49,18 @@ const Home = () => {
           'No email associated with the login method you chose, please use a different method.',
         );
         break;
+      case 'archived_user':
+        alert = messageTemplate(
+          'danger',
+          'Your account has been archived and cannot be used to log in. Please contact support if you believe this is an error.',
+        );
+        break;
+      case 'database_error':
+        alert = messageTemplate(
+          'info',
+          'Failed to login due to the system being down. Please try again later!',
+        );
+        break;
       case 'invalid_userinfo_response':
         alert = messageTemplate(
           'danger',

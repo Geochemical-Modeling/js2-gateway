@@ -66,6 +66,18 @@ async def auth_callback(code: str):
         # Check to see if the user_info contains the email field
         if "email" not in user_info:
           return RedirectResponse(url="/?alert=missing_email")
+        
+        try:
+          with get_session() as session:
+              statement = select(User).where(User.email == user_info["email"])
+              db_user = session.exec(statement).first()
+              if db_user and db_user.archived == 1:
+                  # User is archived, do not log in
+                  return RedirectResponse(url="/?alert=archived_user")
+        except Exception as e:
+          # Optionally handle DB errors
+          return RedirectResponse(url="/?alert=database_error")
+            
         response = RedirectResponse(url="/?alert=login_successful")
         # Set the access token in the cookies
         response.set_cookie(
@@ -158,9 +170,10 @@ async def auth_me(request: Request, response: Response):
                     logger.info(
                       f"User with email '{db_user.email}' is archived. Cannot authenticate them!"
                     )
+                    response.delete_cookie("access_token")
                     return {
                       "status": "failure",
-                      "message": "Failed to fetch user info",
+                      "message": "User is archived. Login prevented!",
                       "details": str(e),
                     }
 
