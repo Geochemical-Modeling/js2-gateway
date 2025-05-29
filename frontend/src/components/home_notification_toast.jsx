@@ -20,6 +20,12 @@ function HomeNotificationToast() {
           would not infringe privately owned rights.
           <br />
           <br />
+          <strong>Note:</strong> When registering or logging in, we strongly
+          recommend using your institution's credentials rather than a generic
+          login method like Google. This helps speed up approval and ensures
+          smoother access.
+          <br />
+          <br />
           For additional information, contact{' '}
           <a href="mailto:supcrt@iu.edu">supcrt@iu.edu</a>.
         </p>
