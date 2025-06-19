@@ -955,12 +955,22 @@ export default function SupcrtbOnline() {
                 <br /> Positive numbers are products and negative numbers are
                 reactants,
                 <br />
+                
                 e.g. QUARTZ {'=>'} SiO2,aq:
                 <br />
                 <code>
                   -1 QUARTZ
                   <br />1 SiO2,aq
                 </code>
+
+                <br />
+                
+                <span>
+                <strong>Note:</strong> Currently H2O doesn't appear in the drop down, so please type it in manually if you want to use it.
+                </span>
+                
+                
+                
               </label>
 
               {reactionInputs.map((input, index) => (
