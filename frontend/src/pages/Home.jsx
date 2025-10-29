@@ -49,29 +49,33 @@ const Home = () => {
       case 'missing_email':
         alert = messageTemplate(
           'warning',
-            <>
-              <p>
-                No email associated with the login method you chose. Please try a
-                different login method.
-              </p>
-              <p>
-                {/* Clears cilogon cookie so that next time, it will reprompt the user on what IDP they want to select.
+          <>
+            <p>
+              No email associated with the login method you chose. Please try a
+              different login method.
+            </p>
+            <p>
+              {/* Clears cilogon cookie so that next time, it will reprompt the user on what IDP they want to select.
                 Allowing the user to choose a different account, rather than being automatically logged in with the same one */}
-                <a href="https://cilogon.org/logout/" className="rvt-link">
-                  Click here to log out of CILogon and try again.
-                </a>
-              </p>
-            </>
+              <a href="https://cilogon.org/logout/" className="rvt-link">
+                Click here to log out of CILogon and try again.
+              </a>
+            </p>
+          </>,
         );
         break;
       case 'archived_user':
         alert = messageTemplate(
           'danger',
           <p>
-            Your account has been archived and cannot be used to log in. Please contact 
-            <a href="supcrt@iu.edu" className="rvt-link">{" "}support{" "}</a> 
+            Your account has been archived and cannot be used to log in. Please
+            contact
+            <a href="supcrt@iu.edu" className="rvt-link">
+              {' '}
+              support{' '}
+            </a>
             if you believe this is an error.
-          </p>
+          </p>,
         );
         break;
       case 'database_error':
@@ -85,41 +89,44 @@ const Home = () => {
           'danger',
           <>
             <p>
-              Invalid user information response. Please try logging in again later, or use a different method.
+              Invalid user information response. Please try logging in again
+              later, or use a different method.
             </p>
             <p>
               {/* At this stage the authenticated worked, but the user info we got was bad. Something 
               internal or external happened here,. In any case, don't really want the user getting stuck in a loop.  */}
               <a href="https://cilogon.org/logout/" className="rvt-link">
-                Click here to log out of CILogon so that you can use a different login method.
+                Click here to log out of CILogon so that you can use a different
+                login method.
               </a>
             </p>
-          </>
+          </>,
         );
         break;
       case 'invalid_token_response':
         alert = messageTemplate(
           'danger',
-          // Here the user wasn't even logged in so CILogon shouldn't set a session for them. 
+          // Here the user wasn't even logged in so CILogon shouldn't set a session for them.
           // The next time they should get reprompted for their account.
           'Invalid token response. Please try again later or use a different login method.',
         );
         break;
       case 'logout':
         alert = messageTemplate(
-          'info', 
+          'info',
           <>
             <p>
-              You have successfully logged out. If you need to switch accounts, please also log out of CILogon.
+              You have successfully logged out. If you need to switch accounts,
+              please also log out of CILogon.
             </p>
             <p>
               {/* At this stage the authenticated worked, but the user info we got was bad. Something 
               internal or external happened here,. In any case, don't really want the user getting stuck in a loop.  */}
               <a href="https://cilogon.org/logout/" className="rvt-link">
-                Optional: Click here to log out of CILogon 
+                Optional: Click here to log out of CILogon
               </a>
             </p>
-          </>
+          </>,
         );
         break;
       default:
