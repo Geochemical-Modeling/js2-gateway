@@ -1,4 +1,4 @@
-export default function Alert({ title, subtitle, type = 'info' }) {
+export default function Alert({ title, subtitle, type = 'info', className }) {
   const typeMap = {
     info: ['rvt-alert--info', 'information-alert-title', 'info'],
     success: ['rvt-alert--success', 'success-alert-title', 'success'],
@@ -8,7 +8,7 @@ export default function Alert({ title, subtitle, type = 'info' }) {
   const currentTypeInfo = typeMap[type];
   return (
     <div
-      className={`rvt-alert ${currentTypeInfo[0]}`}
+      className={`rvt-alert ${currentTypeInfo[0]} ${className}`}
       role="alert"
       aria-labelledby={`${currentTypeInfo[1]}`}
       data-rvt-alert={`${currentTypeInfo[2]}`}

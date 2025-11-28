@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
+import Alert from '../components/Alert';
 
 function Onboarding() {
   const { user, userAuth, completeOnboarding } = useAuth();
@@ -63,7 +64,6 @@ function Onboarding() {
         <h1 className="rvt-ts-36 rvt-text-center rvt-m-bottom-lg">
           Complete Your Profile
         </h1>
-
         {success ? (
           <div className="rvt-alert rvt-alert--success rvt-m-bottom-md">
             <div className="rvt-alert__title">Success!</div>
@@ -86,10 +86,39 @@ function Onboarding() {
                 <h2 className="rvt-box__title">Welcome to JS2 Gateway</h2>
               </div>
               <div className="rvt-box__body">
-                <p className="rvt-m-bottom-md">
+                <p>
                   Please verify or update your information below to complete the
                   onboarding process.
                 </p>
+
+                {/* Render warning message over ehre or something */}
+                <Alert
+                  className="rvt-m-top-sm rvt-m-bottom-sm"
+                  title="Attention: Before you onboard yourself!"
+                  subtitle={
+                    <ul>
+                      <li>
+                        If you registered using a major identity provider
+                        (Google, GitHub, Microsoft, or similar), please note
+                        that these accounts are{' '}
+                        <strong>unlikely to be approved</strong> unless special
+                        circumstances apply.
+                      </li>
+                      <li>
+                        Orchid users (and potentially others) must ensure their
+                        email address is set to <strong>public</strong> so that
+                        OIDC authentication functions correctly.
+                      </li>
+                      <li>
+                        If you were required to register due to external
+                        circumstances or believe your situation warrants an
+                        exception, please contact our support team at{' '}
+                        <a href="mailto:supcrt@iu.edu">supcrt@iu.edu</a>.
+                      </li>
+                    </ul>
+                  }
+                  type="info"
+                />
 
                 <form onSubmit={handleSubmit}>
                   <div className="rvt-m-bottom-md">
