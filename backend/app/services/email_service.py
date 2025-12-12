@@ -134,12 +134,28 @@ def send_account_approved_notification(user_email: str, user_name: str) -> bool:
   """
   subject = "Your JS2 Gateway Account Has Been Approved"
   html_content = f"""
-    <h2>Good news, {user_name}!</h2>
-    <p>Your JS2 Geochemical Gateway account has been approved.</p>
-    <p>You can now log in and access all the tools and resources available on the platform.</p>
-    <p><a href="{settings.FRONTEND_URL}">Go to JS2 Gateway</a></p>
+    <h2>Thank you for registering, {user_name}!</h2>
+    <p>Your account has been created and is now pending administrator approval. Please read the principles below:</p>
+    <ul>
+        <li>
+            If you registered using a major identity provider 
+            (Google, GitHub, Microsoft, or similar), please note that these accounts are 
+            <strong>unlikely to be approved</strong> unless special circumstances apply. Please log in with your institutional credentials instead!
+        </li>
+        <li>
+            Orchid users must ensure their email address is set to 
+            <strong>public</strong> so that OIDC authentication functions correctly.
+        </li>
+        <li>
+            If you were required to register due to external circumstances 
+            or believe your situation warrants an exception, please contact our support team at 
+            <a href="mailto:supcrt@iu.edu">supcrt@iu.edu</a>.
+        </li>
+    </ul>
+    <p>You will receive another email if your account gets approved.</p>
     <br>
-    <p>Thank you,<br>JS2 Geochemical Gateway Team</p>
+    <p>Thank you,<br>
+    JS2 Geochemical Gateway Team</p>
     """
 
   return send_email(user_email, subject, html_content)
