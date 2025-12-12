@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { IS_AUTH_DISABLED } from '../config';
-
+import { route_map } from '../constants';
 /**
  * Component that checks if a user needs onboarding and forces redirect
  * This is placed at the top level to run on every route
@@ -24,9 +24,9 @@ function OnboardingCheck() {
     if (
       isAuthenticated &&
       needsOnboarding &&
-      location.pathname !== '/onboarding'
+      location.pathname !== route_map.ONBOARDING
     ) {
-      navigate('/onboarding', { replace: true });
+      navigate(route_map.ONBOARDING, { replace: true });
     }
   }, [
     isAuthenticated,

@@ -35,7 +35,7 @@ function App() {
           <Route element={<Layout />}>
             {/* Public routes accessible to all users */}
             <Route path="/" element={<Home />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path={route_map.ONBOARDING} element={<Onboarding />} />
 
             <Route path={route_map.ADMIN_PAGE} element={<AdminPage />} />
 

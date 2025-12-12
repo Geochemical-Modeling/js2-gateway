@@ -78,29 +78,29 @@ function Onboarding() {
               <div className="rvt-alert rvt-alert--danger rvt-m-bottom-md">
                 <div className="rvt-alert__title">Error</div>
                 <p className="rvt-alert__message">{error}</p>
-              </div>
+i              </div>
             )}
 
             <div className="rvt-box">
               <div className="rvt-box__header">
-                <h2 className="rvt-box__title">Welcome to JS2 Gateway</h2>
+                <h2 className="rvt-box__title">
+                  Welcome to Geochemical Modeling Gateway
+                </h2>
               </div>
               <div className="rvt-box__body">
                 <p>
                   Please verify or update your information below to complete the
-                  onboarding process.
+                  registration process.
                 </p>
 
                 {/* Render warning message over ehre or something */}
                 <Alert
                   className="rvt-m-top-sm rvt-m-bottom-sm"
-                  title="Attention: Before you onboard yourself!"
+                  title="Attention: Before you register, please read message below!"
                   subtitle={
                     <ul>
                       <li>
-                        If you registered using a major identity provider
-                        (Google, GitHub, Microsoft, or similar), please note
-                        that these accounts are{' '}
+                        If you registered using an identity provider                        (such as Google, GitHub, Microsoft, or a similar service), instead of your institution email, then please note that these accounts are{' '}
                         <strong>unlikely to be approved</strong> unless special
                         circumstances apply.
                       </li>
@@ -138,7 +138,7 @@ function Onboarding() {
 
                   <div className="rvt-m-bottom-md">
                     <label className="rvt-label" htmlFor="email">
-                      Email Address
+                      Institution Email Address
                     </label>
                     <input
                       className="rvt-input"
@@ -152,8 +152,8 @@ function Onboarding() {
                       required
                     />
                     <small className="rvt-color-neutral-500">
-                      This email is provided by your authentication provider and
-                      cannot be changed.
+                      This email is provided by your organization and cannot be
+                      changed.
                     </small>
                   </div>
 

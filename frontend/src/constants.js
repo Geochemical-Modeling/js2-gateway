@@ -18,4 +18,5 @@ export const route_map = {
   H2S_CALCULATOR_ONLINE: '/H2SCalculatorOnline',
   RATE_CALCULATOR_ONLINE: '/RateCalculatorOnline',
   ADMIN_PAGE: '/AdminPage',
+  ONBOARDING: '/registration',
 };
