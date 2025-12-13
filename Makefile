@@ -44,3 +44,15 @@ build:
 # Expect a wait about 5 seconds for the replicas to be created after you run the command
 deploy: build
 	docker stack deploy -c $(STACK_FILE) $(STACK_NAME)
+
+# Remove stack
+remove:
+	docker stack rm $(STACK_NAME)
+
+# Redeploy the stack
+redeploy: remove deploy
+
+# View the logs of a service 
+# e.g. make stack-logs SERVICE=watchtower
+stack-logs:
+	docker service logs -f $(STACK_NAME)_$(SERVICE)
