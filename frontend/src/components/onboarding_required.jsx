@@ -11,8 +11,8 @@ function OnboardingRequired() {
     // Only proceed if auth check is complete
     if (authChecked && isAuthenticated && needsOnboarding) {
       // Don't redirect if already on the onboarding page to avoid loops
-      if (location.pathname !== '/onboarding') {
-        navigate('/onboarding', { replace: true });
+      if (location.pathname !== route_map.ONBOARDING) {
+        navigate(route_map.ONBOARDING, { replace: true });
       }
     }
   }, [isAuthenticated, needsOnboarding, authChecked, navigate, location]);

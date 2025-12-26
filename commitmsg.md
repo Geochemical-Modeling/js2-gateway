@@ -1,4 +1,0 @@
-- Removed `parallelism: 2` because we only have one replica active.
-- Updated `.gitignore` and we are now including `uv.lock` in our version control.
-- Updated onboarding page to have OIDC message/warning
-- Updated OIDC routes to use `/registration` rather than `/onboarding` because in reality it is just a user registration page.

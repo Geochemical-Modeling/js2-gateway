@@ -16,18 +16,18 @@ up:
 	@echo "Building the project..."
 	@cd frontend && npm install && npm run build
 	@echo "Starting up the project with docker compose..."
-	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up --build -d
+	@docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up --build -d
 
 # Shut down the development env
 down:
-	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) down
+	@docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) down
 
 # Restart the development env
 restart: down up
 
 # Quickly show the real-time logs for the dev environment; 
 logs:
-	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) logs -f
+	@docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) logs -f
 
 # For running execing into the dev container
 shell:
@@ -44,7 +44,7 @@ frontend:
 build:
 	@echo "Building the project..."
 	@cd frontend && npm install && npm run build
-	docker build -t $(IMAGE_NAME):$(TAG) .
+	@docker build -t $(IMAGE_NAME):$(TAG) .
 
 # Expect a wait about 5 seconds for the replicas to be created after you run the command
 deploy: build
