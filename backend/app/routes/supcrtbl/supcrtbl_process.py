@@ -70,10 +70,26 @@ def run_supcrtbl_job(
   bin_dir.mkdir(exist_ok=True)
   output_dir.mkdir(exist_ok=True)
 
-  # Copy executables and data files from supcrtfiles into the working directory
+  """
+  # Copy executeables and datafiles into the job directory
+  They're leaving off the file extensions because remember, the input we 
+  expect from the user for the 'slopFile' doesn't have an extension. 
+
+  NOTE: The possible input from the frontend for the slopFile is "dpronsbl" 
+  and "dpronsbl_ree". These are then used to build the path that the supcrtbl 
+  binary uses to find the data files. If that's the case, there's no reason
+  to have "dpronsbl_all" because the user is never given the choice to pick that 
+  on the frontend. I'm assuming it's just a relic from the past.
+  
+  TODO:
+  - Also, I think shutil is literally creating new files. In the original, they 
+  just use symbolic files, meaning that we would create references to the original files.
+  I think that may be more space efficient and would still do the same job?
+  """
   # NOTE: In the they left off the .dat, so that's a little weird
   shutil.copy(SUPCRT_FILES / "supcrtbl", job_dir / "supcrtbl")
   shutil.copy(SUPCRT_FILES / "dpronsbl.dat", bin_dir / "dpronsbl")
+  shutil.copy(SUPCRT_FILES / "dpronsbl_ree.dat", bin_dir / "dpronsbl_ree")
   shutil.copy(SUPCRT_FILES / "dpronsbl_all.dat", bin_dir / "dpronsbl_all")
 
   log_file_path = job_dir / LOG_FILE_NAME

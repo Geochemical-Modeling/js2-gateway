@@ -27,7 +27,7 @@ logs:
 
 # For running execing into the dev container
 shell:
-	@docker exec -it $(shell docker ps -q -f "name=$(PROJECT_NAME)") /bin/sh
+	@docker compose -f $(COMPOSE_FILE) exec web /bin/bash
 
 # Run the react app only; good for when you just need to develop the frontend.
 frontend:

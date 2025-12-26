@@ -4,6 +4,7 @@ from typing import Optional, Union
 import os, time, re
 from .JobLockFile import JobLockFile
 from . import supcrtbl_process
+from app.services.logger import app_logger
 
 router = APIRouter()
 
@@ -226,6 +227,7 @@ def get_job_results(experiment_id: str):
   # Start collecting the output files in the output dir
   output_dir = job_dir / "output"
   if not output_dir.exists():
+    app_logger.info(f"Experiment output directory '{output_dir}' not found!")
     raise HTTPException(status_code=404, detail="Experiment output directory not found")
 
   # Collect the information of output files within the results array
@@ -251,6 +253,7 @@ def get_job_results(experiment_id: str):
       results.append({"filename": file_name, "content": content})
 
   if not results:
+    app_logger.warning(f"Output directory exists ('{output_dir}'), but no file results were found!")
     raise HTTPException(status_code=404, detail="No output files found")
 
   return {"data": results}
@@ -292,7 +295,7 @@ def get_job_status(experiment_id: str):
 
 @router.get("/api/supcrtbl/logs/{experiment_id}")
 def get_job_logs(experiment_id: str):
-  """Returns hte logs of a given job
+  """Returns the logs of a given job
 
   NOTE: Really helpful for development and knowing why something failed.
   Shouldn't really be public facing. Logs don't really show sensitive info though.
