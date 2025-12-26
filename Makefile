@@ -7,6 +7,10 @@ TAG=latest
 
 .PHONY: up down restart logs frontend deploy build
 
+
+## -----------------------------------------------
+# Running app in dev + Debugging with logs and shell
+## -----------------------------------------------
 # Run the app in development env
 up:
 	@echo "Building the project..."
@@ -27,18 +31,16 @@ logs:
 
 # For running execing into the dev container
 shell:
-	@docker exec -it $(shell docker ps -q -f "name=$(PROJECT_NAME)") /bin/sh
+	@docker compose -f $(COMPOSE_FILE) exec web /bin/bash
 
 # Run the react app only; good for when you just need to develop the frontend.
 frontend:
 	@echo "Building the frontend..."
 	@cd frontend && npm install && npm run dev
 
-format:
-	@echo "Formatting the code"
-	@cd frontend && npm run format
-	@cd backend && uv run ruff format
-
+## -----------------------------------------------
+# Commands for starting up or shutting down prod
+## -----------------------------------------------
 build:
 	@echo "Building the project..."
 	@cd frontend && npm install && npm run build
@@ -46,4 +48,28 @@ build:
 
 # Expect a wait about 5 seconds for the replicas to be created after you run the command
 deploy: build
-	@docker stack deploy -c $(STACK_FILE) $(STACK_NAME)
+	docker stack deploy -c $(STACK_FILE) $(STACK_NAME)
+
+# Remove stack
+remove:
+	docker stack rm $(STACK_NAME)
+
+# Redeploy the stack
+redeploy: remove deploy
+
+# View the logs of a service 
+# e.g. make stack-logs SERVICE=watchtower
+stack-logs:
+	docker service logs -f $(STACK_NAME)_$(SERVICE)
+
+## -----------------------------------------------
+# Linting and Formatting
+## -----------------------------------------------
+format:
+	@cd backend && uv run ruff format .
+	@cd frontend && npm run format
+
+# Checks for and fixes simple linting errors
+lint:
+	@cd backend && uv run ruff check --fix .
+	@cd frontend && npm run lint

@@ -1,21 +1,17 @@
 from starlette.responses import RedirectResponse
 from fastapi import Request, Response, APIRouter
-import os, requests
-import logging
+import os
+import requests
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 from app.db import User, get_session
-from datetime import datetime
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from app.services.logger import app_logger
 
 router = APIRouter()
 
 
 @router.get("/auth", tags=["auth"])
-async def auth_me():
+async def auth_redirect():
   """
   Redirect for OIDC authentication.
   """
@@ -74,7 +70,7 @@ async def auth_callback(code: str):
             if db_user and db_user.archived == 1:
               # User is archived, do not log in
               return RedirectResponse(url="/?alert=archived_user")
-        except Exception as e:
+        except Exception:
           # Optionally handle DB errors
           return RedirectResponse(url="/?alert=database_error")
 
@@ -128,7 +124,7 @@ async def auth_me(request: Request, response: Response):
       timeout=2,
     )
   except requests.exceptions.RequestException as e:
-    logger.error(f"Failed to fetch user info: {e}")
+    app_logger.exception(f"Failed to fetch user info. Clearing access token cookie!")
     response.delete_cookie("access_token")
     return {
       "status": "failure",
@@ -138,7 +134,7 @@ async def auth_me(request: Request, response: Response):
 
   if user_info_response.status_code == 200:
     try:
-      logger.info("User info response received successfully")
+      # app_logger.info("User info response received successfully")
       user_info = user_info_response.json()
 
       # Get user authorization details from database using the email
@@ -149,32 +145,28 @@ async def auth_me(request: Request, response: Response):
 
       if "email" in user_info:
         email = user_info["email"]
-        logger.info(f"Looking up user authorization for email: {email}")
-
+        # app_logger.info(f"Looking up user email: {email}")
         try:
           with get_session() as session:
             if session is None:
               db_status = "warning"
               db_message = "Database connection unavailable"
-              logger.warning("Database session is None, skipping user lookup")
+              app_logger.warning("Database session is None, skipping user lookup")
             else:
               try:
-                logger.info("Querying user_details table for existing user")
                 statement = select(User).where(User.email == email)
                 db_user = session.exec(statement).first()
-
                 if db_user:
-                  logger.info(f"Found existing user in database: {db_user.id}")
-
+                  # app_logger.info(f"Found existing user with id '{db_user.id}'")
                   if db_user.archived == 1:
-                    logger.info(
+                    app_logger.info(
                       f"User with email '{db_user.email}' is archived. Cannot authenticate them!"
                     )
                     response.delete_cookie("access_token")
                     return {
                       "status": "failure",
                       "message": "User is archived. Login prevented!",
-                      "details": str(e),
+                      "details": "User is archived. Please contact supcrt@iu.edu for support",
                     }
 
                   # Convert SQLModel to dict and add to response
@@ -192,7 +184,7 @@ async def auth_me(request: Request, response: Response):
                     "onboarded": db_user.onboarded,
                   }
                 else:
-                  logger.info(f"User {email} not found, creating minimal user entry")
+                  # app_logger.info(f"User {email} not found, creating minimal user entry")
 
                   # Get name components from CILogon data if available
                   name = user_info.get("name", "")
@@ -216,7 +208,7 @@ async def auth_me(request: Request, response: Response):
                     session.commit()
                     # Refresh to get the assigned ID
                     session.refresh(new_user)
-                    logger.info(f"Created new user with ID: {new_user.id}")
+                    # app_logger.info(f"Created new user with ID: {new_user.id}")
 
                     # Set flag for new user creation
                     is_new_user = True
@@ -238,17 +230,17 @@ async def auth_me(request: Request, response: Response):
 
                     db_message = "New user created successfully"
                   except SQLAlchemyError as add_error:
-                    logger.error(f"Failed to create new user: {add_error}")
+                    app_logger.exception(f"Failed to create new user: {add_error}")
                     db_status = "error"
                     db_message = f"Failed to create new user: {str(add_error)}"
               except Exception as table_error:
                 db_status = "error"
                 db_message = f"Error querying user_details table: {str(table_error)}"
-                logger.error(db_message)
+                app_logger.exception(db_message)
         except SQLAlchemyError as db_error:
           db_status = "error"
           db_message = f"Database connection error: {str(db_error)}"
-          logger.error(db_message)
+          app_logger.exception(db_message)
 
       return {
         "status": "success",
@@ -261,7 +253,7 @@ async def auth_me(request: Request, response: Response):
         "access_token": access_token,
       }
     except requests.exceptions.JSONDecodeError:
-      logger.error("Failed to decode user info response as JSON")
+      app_logger.exception("Failed to decode user info response as JSON")
       response.delete_cookie("access_token")
       return {
         "status": "failure",
@@ -269,7 +261,7 @@ async def auth_me(request: Request, response: Response):
         "details": user_info_response.text,
       }
   else:
-    logger.error(f"Failed to fetch user info: {user_info_response.status_code}")
+    app_logger.exception(f"Failed to fetch user info: {user_info_response.status_code}")
     response.delete_cookie("access_token")
     return {
       "status": "failure",

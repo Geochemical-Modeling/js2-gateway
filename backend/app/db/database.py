@@ -3,7 +3,6 @@ import logging
 import pymysql
 from sqlmodel import create_engine, Session, text
 from contextlib import contextmanager
-import time
 import urllib.parse
 
 # Configure logging

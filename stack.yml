@@ -1,5 +1,3 @@
-version: "3.8"
-
 networks:
   caddy:
     driver: overlay
@@ -52,7 +50,7 @@ services:
     command: --interval 300 --cleanup --include-stopped --revive-stopped --label-enable --monitor-only
     environment:
       - WATCHTOWER_NO_STARTUP_MESSAGE=true
-      - WATCHTOWER_DEBUG=false
+      - WATCHTOWER_DEBUG=true
     networks:
       - caddy
     deploy:

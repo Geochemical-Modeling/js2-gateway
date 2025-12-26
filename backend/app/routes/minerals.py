@@ -1,6 +1,6 @@
-from fastapi import Form, HTTPException, APIRouter, Request
+from fastapi import HTTPException, APIRouter, Request
 import logging
-from sqlmodel import select, text
+from sqlmodel import text
 from app.db.database import get_session
 
 # Configure detailed logging

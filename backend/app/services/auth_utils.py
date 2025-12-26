@@ -1,5 +1,4 @@
-from fastapi import HTTPException, Depends, Request, status
-from typing import Optional
+from fastapi import HTTPException, Request, status
 import requests
 from sqlmodel import select
 import logging

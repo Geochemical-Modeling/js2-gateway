@@ -1,9 +1,7 @@
-import os
-import time
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Request
-from sqlmodel import select, text
+from sqlmodel import text
 from app.db.database import get_session
 from pydantic import BaseModel
 import math
@@ -110,16 +108,16 @@ async def calculate_rate(
           HA = row.HA
           HEa = row.HEa
           HnH = row.HnH
-          Hlogk25 = row.Hlogk25
+          # Hlogk25 = row.Hlogk25
 
           NA = row.NA
           NEa = row.NEa
-          Nlogk25 = row.Nlogk25
+          # Nlogk25 = row.Nlogk25
 
           OHA = row.OHA
           OHEa = row.OHEa
           OHnH = row.OHnH
-          OHlogk25 = row.OHlogk25
+          # OHlogk25 = row.OHlogk25
 
       # If not found in palandri, check carbonates table
       if Ref is None or Ref < 1 or Ref > 4:
@@ -137,21 +135,21 @@ async def calculate_rate(
             HA = row.HA
             HEa = row.HEa
             HnH = row.HnH
-            Hlogk25 = row.Hlogk25
+            # Hlogk25 = row.Hlogk25
 
             NA = row.NA
             NEa = row.NEa
-            Nlogk25 = row.Nlogk25
+            # Nlogk25 = row.Nlogk25
 
             OHA = row.OHA
             OHEa = row.OHEa
             OHnH = row.OHnH
-            OHlogk25 = row.OHlogk25
+            # OHlogk25 = row.OHlogk25
 
             OA = row.OA
             OEa = row.OEa
             OnH = row.OnH
-            Ologk25 = row.Ologk25
+            # Ologk25 = row.Ologk25
 
             co2_input = co2INPUT
 
@@ -169,21 +167,21 @@ async def calculate_rate(
             HEa = row.HEa
             Hn1 = row.Hn1
             Hn3 = row.Hn3
-            Hlogk25 = row.Hlogk25
+            # Hlogk25 = row.Hlogk25
 
             NA = row.NA
             NEa = row.NEa
-            Nlogk25 = row.Nlogk25
+            # Nlogk25 = row.Nlogk25
 
             OHA = row.OHA
             OHEa = row.OHEa
             OHn2 = row.OHn2
-            OHlogk25 = row.OHlogk25
+            # OHlogk25 = row.OHlogk25
 
             OA = row.OA
             OEa = row.OEa
             On = row.On
-            Ologk25 = row.Ologk25
+            # Ologk25 = row.Ologk25
 
             o_input = oINPUT
             fe_input = feINPUT
@@ -202,15 +200,19 @@ async def calculate_rate(
 
       if Ref <= 3:
         kTemp = temp + 273.15
-        Kw = (
-          1530.875
-          + 0.5198124 * kTemp
-          - 60208.41 / kTemp
-          - 608.0362 * math.log10(kTemp)
-          + 2139656 / (kTemp**2)
-          - 0.0001961716 * (kTemp**2)
-        )
-        pOH = -1 * Kw - pH
+
+        # 2. After we comment out unused variable pOH, this becomes unused as well
+        # Kw = (
+        #   1530.875
+        #   + 0.5198124 * kTemp
+        #   - 60208.41 / kTemp
+        #   - 608.0362 * math.log10(kTemp)
+        #   + 2139656 / (kTemp**2)
+        #   - 0.0001961716 * (kTemp**2)
+        # )
+
+        # NOTE: Literally unused, don't know why we have it.
+        # pOH = -1 * Kw - pH;
 
         if HA is not None:
           AMech = (

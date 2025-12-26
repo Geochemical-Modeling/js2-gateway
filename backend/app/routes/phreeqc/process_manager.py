@@ -3,7 +3,7 @@ import subprocess
 import time
 import threading
 import json
-from typing import Dict, Optional
+from typing import Dict
 from datetime import datetime
 
 # Dictionary to keep track of running processes
@@ -189,7 +189,7 @@ def cleanup_old_processes():
         update_lock_file(
           process_info["lock_file"], "timeout", "Process killed after timeout"
         )
-      except:
+      except Exception:
         pass
       expired_processes.append(exp_id)
 
