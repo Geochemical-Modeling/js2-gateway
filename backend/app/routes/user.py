@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Request, Response, HTTPException, Depends, status
-from sqlmodel import select, update, Session, col
+from fastapi import APIRouter, Request, Response, HTTPException, Depends
+from sqlmodel import select
 from app.db import User, get_session
 from sqlalchemy.exc import SQLAlchemyError
 import logging
@@ -12,7 +12,7 @@ from app.services.email_service import (
   send_user_pending_notification,
   send_account_approved_notification,
 )
-from app.services.auth_utils import admin_required, get_current_user
+from app.services.auth_utils import admin_required
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

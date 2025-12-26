@@ -94,4 +94,4 @@ def co2_calculator_interceptor(temp: float, bar: float, mNaCl: float):
     raise HTTPException(status_code=500, detail="Internal Server Error")
   except FileNotFoundError as e:
     print(f"File not found: {binary_path} - {e.strerror}")
-    raise HTTPException(status_code=500, detail=f"Internal Server Error")
+    raise HTTPException(status_code=500, detail="Internal Server Error")

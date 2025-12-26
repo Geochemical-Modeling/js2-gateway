@@ -1,15 +1,13 @@
-import subprocess
-from fastapi import APIRouter, HTTPException, File, Form, UploadFile
+from fastapi import APIRouter, HTTPException, Form, UploadFile
 from fastapi.responses import FileResponse
 import os
 from typing import Union, Optional
-from zipfile import ZipFile
 import re
 from datetime import datetime
-
-router = APIRouter()
 from typing import Annotated
 from . import process_manager
+
+router = APIRouter()
 
 databaseOptionList = [
   "geothermal.dat",
@@ -60,7 +58,7 @@ async def phreeqc_interceptor(
   inputFileDir = os.path.join(inputDir, inputFile.filename)
   files = []
   contents = (await inputFile.read()).decode("utf-8")
-  lines = re.split(f"\r\n|\r|\n", contents)
+  lines = re.split("\r\n|\r|\n", contents)
   for line in lines:
     line_parts = re.sub(r"\s+", " ", line).split(" ")
     for i in range(len(line_parts) - 1):
@@ -92,7 +90,7 @@ async def phreeqc_interceptor(
       with open(datFileDir, "w") as f:
         contents = (await customDataFile.read()).decode("utf-8")
         f.write(contents)
-    except:
+    except Exception:
       raise HTTPException(
         status_code=500,
         detail="Failed to parse your custom database file. Please double check it and try again later!",

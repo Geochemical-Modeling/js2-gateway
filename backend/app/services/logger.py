@@ -13,16 +13,16 @@ app_logger.setLevel(logging.INFO)
 
 # Prevent duplicate logs if this module gets imported multiple times
 if not app_logger.handlers:
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
+  # Console handler
+  console_handler = logging.StreamHandler()
+  console_handler.setLevel(logging.INFO)
 
-    # Consistent log formatting
-    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-    console_handler.setFormatter(formatter)
+  # Consistent log formatting
+  formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+  console_handler.setFormatter(formatter)
 
-    # Add handlers to logger
-    app_logger.addHandler(console_handler)
+  # Add handlers to logger
+  app_logger.addHandler(console_handler)
 
 # prevent log propagation to root logger
 app_logger.propagate = False

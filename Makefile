@@ -5,8 +5,12 @@ STACK_NAME=$(PROJECT_NAME)-stack
 STACK_FILE=stack.yml
 TAG=latest
 
-.PHONY: up down restart logs frontend
+.PHONY: up down restart logs frontend deploy build
 
+
+## -----------------------------------------------
+# Running app in dev + Debugging with logs and shell
+## -----------------------------------------------
 # Run the app in development env
 up:
 	@echo "Building the project..."
@@ -34,8 +38,9 @@ frontend:
 	@echo "Building the frontend..."
 	@cd frontend && npm install && npm run dev
 
-.PHONY: deploy build
-
+## -----------------------------------------------
+# Commands for starting up or shutting down prod
+## -----------------------------------------------
 build:
 	@echo "Building the project..."
 	@cd frontend && npm install && npm run build
@@ -56,3 +61,15 @@ redeploy: remove deploy
 # e.g. make stack-logs SERVICE=watchtower
 stack-logs:
 	docker service logs -f $(STACK_NAME)_$(SERVICE)
+
+## -----------------------------------------------
+# Linting and Formatting
+## -----------------------------------------------
+format:
+	@cd backend && uv run ruff format .
+	@cd frontend && npm run format
+
+# Checks for and fixes simple linting errors
+lint:
+	@cd backend && uv run ruff check --fix .
+	@cd frontend && npm run lint

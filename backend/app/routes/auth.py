@@ -1,11 +1,11 @@
 from starlette.responses import RedirectResponse
 from fastapi import Request, Response, APIRouter
-import os, requests
+import os
+import requests
 import logging
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 from app.db import User, get_session
-from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -15,7 +15,7 @@ router = APIRouter()
 
 
 @router.get("/auth", tags=["auth"])
-async def auth_me():
+async def auth_redirect():
   """
   Redirect for OIDC authentication.
   """
@@ -74,7 +74,7 @@ async def auth_callback(code: str):
             if db_user and db_user.archived == 1:
               # User is archived, do not log in
               return RedirectResponse(url="/?alert=archived_user")
-        except Exception as e:
+        except Exception:
           # Optionally handle DB errors
           return RedirectResponse(url="/?alert=database_error")
 
@@ -174,7 +174,7 @@ async def auth_me(request: Request, response: Response):
                     return {
                       "status": "failure",
                       "message": "User is archived. Login prevented!",
-                      "details": str(e),
+                      "details": "User is archived. Please contact supcrt@iu.edu for support",
                     }
 
                   # Convert SQLModel to dict and add to response

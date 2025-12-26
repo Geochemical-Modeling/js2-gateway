@@ -1,7 +1,9 @@
 from fastapi import File, UploadFile, Form, HTTPException, APIRouter
 from fastapi.responses import FileResponse
 from typing import Optional, Union
-import os, time, re
+import os
+import time
+import re
 from .JobLockFile import JobLockFile
 from . import supcrtbl_process
 from app.services.logger import app_logger
@@ -104,7 +106,7 @@ async def run_calculation(
       with open(upload_file_path, "w") as f:
         contents = (await reactFile.read()).decode("utf-8")
         f.write(contents)
-    except Exception as e:
+    except Exception:
       raise HTTPException(
         status_code=400,
         detail=f"Reaction file '{reactFile.filename}' couldn't be processed. Please check it and try again!",
@@ -253,7 +255,9 @@ def get_job_results(experiment_id: str):
       results.append({"filename": file_name, "content": content})
 
   if not results:
-    app_logger.warning(f"Output directory exists ('{output_dir}'), but no file results were found!")
+    app_logger.warning(
+      f"Output directory exists ('{output_dir}'), but no file results were found!"
+    )
     raise HTTPException(status_code=404, detail="No output files found")
 
   return {"data": results}
@@ -310,5 +314,5 @@ def get_job_logs(experiment_id: str):
   try:
     with open(job_log_path, "r") as log:
       return log.read()
-  except Exception as e:
+  except Exception:
     raise HTTPException(status_code=500, detail="Error reading job log file!")
