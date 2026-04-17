@@ -30,6 +30,7 @@ def test_raw_connection():
       password=DB_PASS,
       database=DB_NAME,
       connect_timeout=5,
+      ssl={"ssl": True},
     )
     with conn.cursor() as cursor:
       cursor.execute("SELECT 1")
@@ -79,12 +80,15 @@ else:
         f"Creating SQLAlchemy engine with host: {DB_HOST}, port: {DB_PORT}, db: {DB_NAME}"
       )
 
-      # Create SQLModel engine with minimal options
+      # Create SQLModel engine with SSL options
       engine = create_engine(
         DATABASE_URL,
         echo=False,
         pool_recycle=3600,  # Recycle connections after an hour
         pool_pre_ping=False,  # Disable connection testing
+        connect_args={
+          "ssl": {"ssl": True},
+        },
       )
 
       # Basic connection test using proper SQLAlchemy 2.0 syntax
