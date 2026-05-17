@@ -54,3 +54,12 @@ These changes aim to bring the gateway in line with IU’s standards for brandin
 The goal of using Docker Swarm is to introduce fault tolerance and orchestration without the full complexity of systems like Kubernetes. Healthchecks are integrated into the deployment process to reduce risk; if an image fails, it won’t be promoted to serve traffic. Once services are reverse proxied through Caddy, SSL certificate management becomes automatic, removing the need for manual upkeep and reducing the potential for configuration errors or downtime.
 #### CI/CD
 By utilizing the Makefile, you can establish a fully local "prod" environment, assuming you are running Docker Swarm locally (which can be done by simply doing `docker swarm init`). This let's you test a complete environment locally without having to rely on Jetstream2. Eventually the goal is to implement a full GitOps pipeline so that touching the production server(s) is restricted to specialty cases only with all new updates being completely automated. Watchtower would handle pulling the images with Github Actions used to push the container images to Docker Hub or a similar registry.
+
+## Credits
+
+Written by Calloway Sutton for the Zhu Labratory at Indiana University (2024 - 2025)
+
+Written by Kevin Nguyen for the Zhu Labratory at Indiana University (2025 - 2026)
+
+Written by Krish Dembla for the Zhu Labratory at Indiana University (2026)
+
